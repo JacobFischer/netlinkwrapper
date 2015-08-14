@@ -1,0 +1,14 @@
+{
+  "name": "netLinkWrapper",
+  "version": "0.0.1",
+  "description": "This is a simple node-gyp module wrapper for the C++ library netLink v1.0.0_pre6",
+  "main": "main.js",
+  "repository" : {
+    "type" : "git",
+    "url" : "https://github.com/JacobFischer/netLinkWrapper.git"
+  },
+  "gypfile": true,
+  "dependencies": {
+    "bindings": "~1.2.1"
+  }
+}
