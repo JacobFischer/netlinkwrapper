@@ -7,7 +7,7 @@
   "keywords": ["synchronous", "tcp", "socket", "network", "addon"],
   "repository" : {
     "type" : "git",
-    "url" : "https://github.com/JacobFischer/netLinkWrapper.git"
+    "url" : "https://github.com/JacobFischer/netlinkwrapper.git"
   },
   "gypfile": true,
   "dependencies": {
