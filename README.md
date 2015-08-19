@@ -1,4 +1,4 @@
-# netLinkWrapper
+# netlinkwrapper
 
 This is a simple node-gyp module wrapper for the C++ library [netLink](https://github.com/Lichtso/netLink) v1.0.0_pre6. Meaning this is a very simple wrapper for a very simple TCP library.
 
@@ -23,9 +23,9 @@ As this is a wrapper for a c++ library, npm will be building said library. On Wi
 ## Example
 
 ```javascript
-var netlinksocket = require('bindings')('netlinksocket');
+var netlinkwrapper = require("netlinkwrapper");
 
-var netlink = new netlinksocket.NetLinkWrapper();
+var netlink = new netlinkwrapper();
 
 netlink.connect("localhost", 3000);
 

@@ -1,1 +1,3 @@
-module.exports = require('bindings')('netlinksocket');
+var netlinksocket = require('bindings')('netlinksocket');
+
+module.exports = netlinksocket.NetLinkWrapper;

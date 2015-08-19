@@ -28,6 +28,7 @@ void NetLinkWrapper::Init(Handle<Object> exports)
 
     // Prototype
     NODE_SET_PROTOTYPE_METHOD(tpl, "connect", Connect);
+    NODE_SET_PROTOTYPE_METHOD(tpl, "blocking", Blocking);
     NODE_SET_PROTOTYPE_METHOD(tpl, "read", Read);
     NODE_SET_PROTOTYPE_METHOD(tpl, "send", Send);
     NODE_SET_PROTOTYPE_METHOD(tpl, "disconnect", Disconnect);
@@ -97,6 +98,54 @@ void NetLinkWrapper::Connect(const FunctionCallbackInfo<Value>& args)
     }
 }
 
+void NetLinkWrapper::Blocking(const FunctionCallbackInfo<Value>& args)
+{
+    Isolate* isolate = Isolate::GetCurrent();
+    HandleScope scope(isolate);
+
+    NetLinkWrapper* obj = ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
+
+    if(args.Length() == 0)
+    {
+        bool blocking = false;
+        try
+        {
+            blocking = obj->socket->blocking();
+        }
+        catch(NL::Exception& e)
+        {
+            isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, e.what())));
+            return;
+        }
+        args.GetReturnValue().Set(Boolean::New(isolate, blocking));
+    }
+    else if(args.Length() == 1)
+    {
+        if(!args[0]->IsBoolean())
+        {
+            isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "first optional arg when passed must be boolean to set blocking to")));
+            return;
+        }
+
+        try
+        {
+            obj->socket->blocking(args[0]->BooleanValue());
+        }
+        catch(NL::Exception& e)
+        {
+            isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, e.what())));
+            return;
+        }
+    }
+    else
+    {
+        isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "too many args sent to blocking")));
+        return;
+    }
+}
+
+#include <iostream>
+
 void NetLinkWrapper::Read(const FunctionCallbackInfo<Value>& args)
 {
     Isolate* isolate = Isolate::GetCurrent();
@@ -112,7 +161,7 @@ void NetLinkWrapper::Read(const FunctionCallbackInfo<Value>& args)
     size_t bufferSize = (int)args[0]->NumberValue();
     char* buffer = new char[bufferSize];
 
-    unsigned int bufferRead = 0;
+    int bufferRead = 0;
     try
     {
         bufferRead = obj->socket->read(buffer, bufferSize);
@@ -123,8 +172,13 @@ void NetLinkWrapper::Read(const FunctionCallbackInfo<Value>& args)
         return;
     }
 
-    std::string read(buffer, bufferRead);
-    args.GetReturnValue().Set(v8::String::NewFromUtf8(isolate, read.c_str()));
+    if(bufferRead > -1 && bufferRead <= bufferSize) // range check
+    {
+        std::string read(buffer, bufferRead);
+        args.GetReturnValue().Set(v8::String::NewFromUtf8(isolate, read.c_str()));
+    }
+    //else it did not read any data, so this will return undefined
+
     delete[] buffer;
 }
 

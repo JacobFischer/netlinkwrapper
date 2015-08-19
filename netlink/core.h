@@ -49,9 +49,9 @@
     // Requires Win7 or Vista
     // Link to Ws2_32.lib library
 
-
-    // newever versions of Visual Studio do not need this
-    //#define snprintf _snprintf
+    # if defined(_MSC_VER) && _MSC_VER < 1900
+    # define snprintf _snprintf_s
+    # endif
 
 #else
 
