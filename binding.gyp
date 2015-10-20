@@ -9,7 +9,15 @@
         "netlink/socket_group.cc",
         "netlink/util.cc"
       ],
-      "libraries": ["ws2_32.lib"]
+      "cflags": [ "-fexceptions" ],
+      "cflags_cc": [ "-fexceptions" ],
+      "cflags!": [ "-fno-exceptions" ],
+      "cflags_cc!": [ "-fno-exceptions" ],
+      "conditions": [
+        ['OS=="win"', {
+          "libraries": [ "ws2_32.lib" ]
+        }]
+      ]
     }
   ]
 }
