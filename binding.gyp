@@ -9,14 +9,17 @@
         "netlink/socket_group.cc",
         "netlink/util.cc"
       ],
-      "cflags": [ "-fexceptions" ],
-      "cflags_cc": [ "-fexceptions" ],
-      "cflags!": [ "-fno-exceptions" ],
-      "cflags_cc!": [ "-fno-exceptions" ],
+      "cflags!": [ "-fexceptions" ],
+      "cflags_cc!": [ "-fexceptions" ],
       "conditions": [
         ['OS=="win"', {
           "libraries": [ "ws2_32.lib" ]
-        }]
+        },
+         'OS=="mac"', {
+          "xcode_settings": {
+              "GCC_ENABLE_CPP_EXCEPTIONS": "YES"
+          }
+         }]
       ]
     }
   ]

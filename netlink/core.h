@@ -66,6 +66,7 @@
     #include <netdb.h>
     #include <sys/ioctl.h>
     #include <errno.h>
+    #include <unistd.h>
 
 #endif
 
