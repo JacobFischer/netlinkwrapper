@@ -16,7 +16,12 @@
       "conditions": [
         ['OS=="win"', {
           "libraries": [ "ws2_32.lib" ]
-        }]
+        },
+         'OS=="mac"', {
+          "xcode_settings": {
+              "GCC_ENABLE_CPP_EXCEPTIONS": "YES"
+          }
+         }]
       ]
     }
   ]
