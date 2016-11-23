@@ -30,7 +30,7 @@ void NetLinkWrapper::Init(Handle<Object> exports)
     NODE_SET_PROTOTYPE_METHOD(tpl, "connect", Connect);
     NODE_SET_PROTOTYPE_METHOD(tpl, "blocking", Blocking);
     NODE_SET_PROTOTYPE_METHOD(tpl, "read", Read);
-    NODE_SET_PROTOTYPE_METHOD(tpl, "send", Send);
+    NODE_SET_PROTOTYPE_METHOD(tpl, "write", Write);
     NODE_SET_PROTOTYPE_METHOD(tpl, "disconnect", Disconnect);
 
     constructor.Reset(isolate, tpl->GetFunction());
@@ -66,26 +66,25 @@ void NetLinkWrapper::Connect(const FunctionCallbackInfo<Value>& args)
 
     NetLinkWrapper* obj = ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
 
-    if(args.Length() != 2)
+    if(args.Length() != 2 && args.Length() != 1)
     {
-        isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "'connect' requires two arguments")));
+        isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "'connect' requires the arguments port and optionally host")));
         return;
     }
 
-    if(!args[0]->IsString())
-    {
-        isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "'connect' first arg should be string for server")));
-        return;
-    }
-    v8::String::Utf8Value param1(args[0]->ToString());
-    std::string server(*param1);
-
-    if(!args[1]->IsNumber())
+    if(!args[0]->IsNumber())
     {
         isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "'connect' second arg should be number for port on server")));
         return;
     }
-    int port = (int)args[1]->NumberValue();
+    int port = (int)args[0]->NumberValue();
+
+    std::string server = "127.0.0.1";
+    if(args[1]->IsString())
+    {
+        v8::String::Utf8Value param1(args[1]->ToString());
+        server = std::string(*param1);
+    }
 
     try
     {
@@ -144,8 +143,6 @@ void NetLinkWrapper::Blocking(const FunctionCallbackInfo<Value>& args)
     }
 }
 
-#include <iostream>
-
 void NetLinkWrapper::Read(const FunctionCallbackInfo<Value>& args)
 {
     Isolate* isolate = Isolate::GetCurrent();
@@ -153,13 +150,25 @@ void NetLinkWrapper::Read(const FunctionCallbackInfo<Value>& args)
 
     NetLinkWrapper* obj = ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
 
-    if(args.Length() != 1 || !args[0]->IsNumber())
+    if((args.Length() != 1 && args.Length() != 2) || !args[0]->IsNumber())
     {
         isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "'read' first argument must be a number representing how many bytes to try to read")));
         return;
     }
     size_t bufferSize = (int)args[0]->NumberValue();
     char* buffer = new char[bufferSize];
+
+    if(args.Length() == 2 && args[0]->IsBoolean()) {
+        try
+        {
+            obj->socket->blocking(args[1]->BooleanValue());
+        }
+        catch(NL::Exception& e)
+        {
+            isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, e.what())));
+            return;
+        }
+    }
 
     int bufferRead = 0;
     try
@@ -172,7 +181,7 @@ void NetLinkWrapper::Read(const FunctionCallbackInfo<Value>& args)
         return;
     }
 
-    if(bufferRead > -1 && bufferRead <= bufferSize) // range check
+    if(bufferRead > -1 && bufferRead <= (int)bufferSize) // range check
     {
         std::string read(buffer, bufferRead);
         args.GetReturnValue().Set(v8::String::NewFromUtf8(isolate, read.c_str()));
@@ -182,7 +191,7 @@ void NetLinkWrapper::Read(const FunctionCallbackInfo<Value>& args)
     delete[] buffer;
 }
 
-void NetLinkWrapper::Send(const FunctionCallbackInfo<Value>& args)
+void NetLinkWrapper::Write(const FunctionCallbackInfo<Value>& args)
 {
     Isolate* isolate = Isolate::GetCurrent();
     HandleScope scope(isolate);
