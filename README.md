@@ -27,10 +27,10 @@ var netlinkwrapper = require("netlinkwrapper");
 
 var netlink = new netlinkwrapper();
 
-netlink.connect("localhost", 3000);
+netlink.connect(3000, "localhost");
 netlink.blocking(false);
 
-netlink.write("Am I people? Or am I dancer?");
+netlink.write("Are we human, or are we dancer?");
 
 while(true) {
     var str = netlink.read(1024);
