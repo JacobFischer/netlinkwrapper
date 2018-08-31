@@ -4,14 +4,23 @@
   "description": "This is a simple node-gyp module wrapper for the C++ library netLink v1.0.0_pre6",
   "author": "JacobFischer <jacob.t.fischer@gmail.com>",
   "main": "main.js",
-  "keywords": [ "net", "sync", "synchronous", "tcp", "socket", "network", "addon" ],
-  "repository" : {
-    "type" : "git",
-    "url" : "https://github.com/JacobFischer/netlinkwrapper.git"
+  "keywords": [
+    "net",
+    "sync",
+    "synchronous",
+    "tcp",
+    "socket",
+    "network",
+    "addon"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/JacobFischer/netlinkwrapper.git"
   },
   "gypfile": true,
   "dependencies": {
-    "bindings": "~1.2.1"
+    "bindings": "~1.2.1",
+    "nan": "^2.11.0"
   },
   "license": "MIT",
   "bugs": {

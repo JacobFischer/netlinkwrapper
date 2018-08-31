@@ -1,3 +1,4 @@
+#include <nan.h>
 #include "netlinkwrapper.h"
 #include "netlink/exception.h"
 
@@ -55,7 +56,7 @@ void NetLinkWrapper::New(const FunctionCallbackInfo<Value>& args)
         const int argc = 1;
         Local<Value> argv[argc] = { args[0] };
         Local<Function> cons = Local<Function>::New(isolate, constructor);
-        args.GetReturnValue().Set(cons->NewInstance(argc, argv));
+        args.GetReturnValue().Set(Nan::NewInstance(cons, argc, argv).ToLocalChecked());
     }
 }
 
