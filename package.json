@@ -24,9 +24,17 @@
     "nan": "2.11.0"
   },
   "devDependencies": {
-    "mocha": "5.2.0"
+    "jaguarjs-jsdoc": "github:JacobFischer/jaguarjs-jsdoc",
+    "jsdoc": "3.5.5",
+    "mocha": "5.2.0",
+    "shx": "0.3.2"
   },
   "scripts": {
+    "clean": "npm run clean:build && npm run clean:docs",
+    "clean:build": "shx rm -rf build/",
+    "clean:docs": "shx rm -rf docs/",
+    "docs": "jsdoc main.js -r ./README.md -t node_modules/jaguarjs-jsdoc -c conf.json -d docs",
+    "docs:predeploy": "shx touch docs/.nojekyll",
     "test": "mocha"
   },
   "license": "MIT",

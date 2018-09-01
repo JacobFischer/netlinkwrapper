@@ -1,0 +1,33 @@
+language: nodejs
+
+script:
+  # this builds the module, if it fails the build did not pass
+  - npm install
+
+after_success:
+  - npm run docs
+  - npm run docs:predeploy
+  - npm pack
+
+deploy:
+  - provider: pages
+    skip_cleanup: true
+    local_dir: docs/
+    github_token: $GH_TOKEN
+    on:
+      tags: true
+
+  - provider: releases
+    api_key: $GH_TOKEN
+    file_glob: true
+    file: "netlinkwrapper-*.tgz"
+    skip_cleanup: true
+    on:
+      tags: true
+
+  - provider: npm
+    skip_cleanup: true
+    email: "jacob.t.fischer@gmail.com"
+    api_key: $NPM_TOKEN
+    on:
+      tags: true

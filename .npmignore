@@ -1,0 +1,11 @@
+.npmignore
+.travis.yml
+CHANGELOG.md
+conf.json
+
+build/
+docs/
+test/
+
+// npm pack
+netlinkwrapper-*.tgz
