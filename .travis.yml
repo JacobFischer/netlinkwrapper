@@ -3,6 +3,7 @@ language: nodejs
 script:
   # this builds the module, if it fails the build did not pass
   - npm install
+  - npm test
 
 after_success:
   - npm run docs
