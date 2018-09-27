@@ -76,7 +76,7 @@ describe('TCP communication', function() {
       if (str.indexOf('RECEIVED: Anybody out there?') >= 0) {
         serverHasResponded = true;
       }
-      if (str.indexOf('RECEIVED: bye') >= 0) {
+      if (str.indexOf('bye') >= 0) {
         serverHasSaidBye = true;
       }
     });
