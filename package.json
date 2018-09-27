@@ -1,6 +1,6 @@
 {
   "name": "netlinkwrapper",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "This is a simple node-gyp module wrapper for the C++ library netLink v1.0.0_pre6",
   "author": "JacobFischer <jacob.t.fischer@gmail.com>",
   "main": "main.js",
