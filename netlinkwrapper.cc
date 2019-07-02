@@ -21,7 +21,6 @@ NetLinkWrapper::~NetLinkWrapper()
 void NetLinkWrapper::Init(Local<Object> exports)
 {
     Isolate* isolate = Isolate::GetCurrent();
-    Local<Context> context = isolate->GetCurrentContext();
 
     // Prepare constructor template
     Local<FunctionTemplate> tpl = FunctionTemplate::New(isolate, New);
@@ -35,8 +34,8 @@ void NetLinkWrapper::Init(Local<Object> exports)
     NODE_SET_PROTOTYPE_METHOD(tpl, "write", Write);
     NODE_SET_PROTOTYPE_METHOD(tpl, "disconnect", Disconnect);
 
-    constructor.Reset(isolate, tpl->GetFunction(context).ToLocalChecked());
-    exports->Set(String::NewFromUtf8(isolate, "NetLinkWrapper"), tpl->GetFunction(context).ToLocalChecked());
+    constructor.Reset(isolate, Nan::GetFunction(tpl).ToLocalChecked());
+    exports->Set(String::NewFromUtf8(isolate, "NetLinkWrapper"), Nan::GetFunction(tpl).ToLocalChecked());
 }
 
 void NetLinkWrapper::New(const FunctionCallbackInfo<Value>& args)
