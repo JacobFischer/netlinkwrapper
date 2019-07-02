@@ -21,6 +21,7 @@ NetLinkWrapper::~NetLinkWrapper()
 void NetLinkWrapper::Init(Local<Object> exports)
 {
     Isolate* isolate = Isolate::GetCurrent();
+    Local<Context> context = isolate->GetCurrentContext();
 
     // Prepare constructor template
     Local<FunctionTemplate> tpl = FunctionTemplate::New(isolate, New);
@@ -34,8 +35,8 @@ void NetLinkWrapper::Init(Local<Object> exports)
     NODE_SET_PROTOTYPE_METHOD(tpl, "write", Write);
     NODE_SET_PROTOTYPE_METHOD(tpl, "disconnect", Disconnect);
 
-    constructor.Reset(isolate, tpl->GetFunction());
-    exports->Set(String::NewFromUtf8(isolate, "NetLinkWrapper"), tpl->GetFunction());
+    constructor.Reset(isolate, tpl->GetFunction(context).ToLocalChecked());
+    exports->Set(String::NewFromUtf8(isolate, "NetLinkWrapper"), tpl->GetFunction(context).ToLocalChecked());
 }
 
 void NetLinkWrapper::New(const FunctionCallbackInfo<Value>& args)
@@ -78,12 +79,12 @@ void NetLinkWrapper::Connect(const FunctionCallbackInfo<Value>& args)
         isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "'connect' second arg should be number for port on server")));
         return;
     }
-    int port = (int)args[0]->NumberValue();
+    int port = (int)args[0]->NumberValue(isolate->GetCurrentContext()).ToChecked();
 
     std::string server = "127.0.0.1";
     if(args[1]->IsString())
     {
-        v8::String::Utf8Value param1(args[1]->ToString());
+        v8::String::Utf8Value param1(isolate, args[1]->ToString(isolate));
         server = std::string(*param1);
     }
 
@@ -129,7 +130,7 @@ void NetLinkWrapper::Blocking(const FunctionCallbackInfo<Value>& args)
 
         try
         {
-            obj->socket->blocking(args[0]->BooleanValue());
+            obj->socket->blocking(args[0]->BooleanValue(isolate));
         }
         catch(NL::Exception& e)
         {
@@ -156,13 +157,13 @@ void NetLinkWrapper::Read(const FunctionCallbackInfo<Value>& args)
         isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "'read' first argument must be a number representing how many bytes to try to read")));
         return;
     }
-    size_t bufferSize = (int)args[0]->NumberValue();
+    size_t bufferSize = (int)args[0]->NumberValue(isolate->GetCurrentContext()).ToChecked();
     char* buffer = new char[bufferSize];
 
     if(args.Length() == 2 && args[0]->IsBoolean()) {
         try
         {
-            obj->socket->blocking(args[1]->BooleanValue());
+            obj->socket->blocking(args[1]->BooleanValue(isolate->GetCurrentContext()).ToChecked());
         }
         catch(NL::Exception& e)
         {
@@ -204,7 +205,7 @@ void NetLinkWrapper::Write(const FunctionCallbackInfo<Value>& args)
         isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "'send' first argument must be a string to send")));
         return;
     }
-    v8::String::Utf8Value param1(args[0]->ToString());
+    v8::String::Utf8Value param1(isolate,args[0]->ToString(isolate));
     std::string writing(*param1);
 
     try
