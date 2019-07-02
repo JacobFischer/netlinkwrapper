@@ -83,7 +83,7 @@ void NetLinkWrapper::Connect(const FunctionCallbackInfo<Value>& args)
     std::string server = "127.0.0.1";
     if(args[1]->IsString())
     {
-        v8::String::Utf8Value param1(isolate, args[1]->ToString(isolate));
+        Nan::Utf8String param1(args[1]);
         server = std::string(*param1);
     }
 
@@ -204,7 +204,7 @@ void NetLinkWrapper::Write(const FunctionCallbackInfo<Value>& args)
         isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "'send' first argument must be a string to send")));
         return;
     }
-    v8::String::Utf8Value param1(isolate,args[0]->ToString(isolate));
+    Nan::Utf8String param1(args[0]);
     std::string writing(*param1);
 
     try
