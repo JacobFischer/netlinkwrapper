@@ -129,7 +129,7 @@ void NetLinkWrapper::Blocking(const FunctionCallbackInfo<Value>& args)
 
         try
         {
-            obj->socket->blocking(args[0]->BooleanValue(isolate));
+            obj->socket->blocking(args[0]->BooleanValue(isolate->GetCurrentContext()).ToChecked());
         }
         catch(NL::Exception& e)
         {
