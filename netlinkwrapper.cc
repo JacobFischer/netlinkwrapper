@@ -18,7 +18,7 @@ NetLinkWrapper::~NetLinkWrapper()
     }
 }
 
-void NetLinkWrapper::Init(Handle<Object> exports)
+void NetLinkWrapper::Init(Local<Object> exports)
 {
     Isolate* isolate = Isolate::GetCurrent();
 
