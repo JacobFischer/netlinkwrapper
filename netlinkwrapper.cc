@@ -78,7 +78,7 @@ void NetLinkWrapper::Connect(const FunctionCallbackInfo<Value>& args)
         isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "'connect' second arg should be number for port on server")));
         return;
     }
-    int port = (int)args[0]->NumberValue(isolate->GetCurrentContext()).ToChecked();
+    int port = (int)args[0]->NumberValue(isolate->GetCurrentContext()).FromJust();
 
     std::string server = "127.0.0.1";
     if(args[1]->IsString())
@@ -129,7 +129,7 @@ void NetLinkWrapper::Blocking(const FunctionCallbackInfo<Value>& args)
 
         try
         {
-            obj->socket->blocking(args[0]->BooleanValue(isolate->GetCurrentContext()).ToChecked());
+            obj->socket->blocking(args[0]->BooleanValue(isolate->GetCurrentContext()).FromJust());
         }
         catch(NL::Exception& e)
         {
@@ -156,13 +156,13 @@ void NetLinkWrapper::Read(const FunctionCallbackInfo<Value>& args)
         isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "'read' first argument must be a number representing how many bytes to try to read")));
         return;
     }
-    size_t bufferSize = (int)args[0]->NumberValue(isolate->GetCurrentContext()).ToChecked();
+    size_t bufferSize = (int)args[0]->NumberValue(isolate->GetCurrentContext()).FromJust();
     char* buffer = new char[bufferSize];
 
     if(args.Length() == 2 && args[0]->IsBoolean()) {
         try
         {
-            obj->socket->blocking(args[1]->BooleanValue(isolate->GetCurrentContext()).ToChecked());
+            obj->socket->blocking(args[1]->BooleanValue(isolate->GetCurrentContext()).FromJust());
         }
         catch(NL::Exception& e)
         {
