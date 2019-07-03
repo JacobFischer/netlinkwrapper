@@ -10,7 +10,7 @@ script:
   - npm install
   - npm test
 
-after_success:
+before_deploy:
   - npm run docs
   - npm run docs:predeploy
   - npm pack
@@ -25,9 +25,9 @@ deploy:
 
   - provider: releases
     api_key: $GH_TOKEN
+    skip_cleanup: true
     file_glob: true
     file: "netlinkwrapper-*.tgz"
-    skip_cleanup: true
     on:
       tags: true
 
