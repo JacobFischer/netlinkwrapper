@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog]
 and this project adheres to [Semantic Versioning].
 
+## [1.1.2] - 2019-7-3
+### Fixed
+- Fixes for node supporting versions 8 through 12 (current) [#9]
+
 ## [1.1.1] - 2018-9-26
 ### Fixed
 - Fix for building against musl libc [#6]
@@ -28,6 +32,7 @@ and this project adheres to [Semantic Versioning].
 ## [0.0.1] - 2015-11-23
 - Initial release
 
+[#9]: https://github.com/JacobFischer/netlinkwrapper/pull/9
 [#6]: https://github.com/JacobFischer/netlinkwrapper/pull/6
 [#4]: https://github.com/JacobFischer/netlinkwrapper/pull/4
 [#2]: https://github.com/JacobFischer/netlinkwrapper/pull/2
