@@ -1,4 +1,9 @@
-language: nodejs
+language: node_js
+node_js:
+  - "6"
+  - "8"
+  - "10"
+  - "12"
 
 script:
   # this builds the module, if it fails the build did not pass
