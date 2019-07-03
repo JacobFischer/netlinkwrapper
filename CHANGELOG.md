@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning].
 
 ## [1.1.2] - 2019-7-3
 ### Fixed
-- Fixes for node supporting versions 8 through 12 (current) [#9]
+- Fixes for node supporting versions 6 through 12 (current) [#9]
 
 ## [1.1.1] - 2018-9-26
 ### Fixed
