@@ -22,6 +22,8 @@ deploy:
     github_token: $GH_TOKEN
     on:
       tags: true
+      branch: master
+      node_js: "12"
 
   - provider: releases
     api_key: $GH_TOKEN
@@ -30,6 +32,8 @@ deploy:
     file: "netlinkwrapper-*.tgz"
     on:
       tags: true
+      branch: master
+      node_js: "12"
 
   - provider: npm
     skip_cleanup: true
@@ -37,3 +41,5 @@ deploy:
     api_key: $NPM_TOKEN
     on:
       tags: true
+      branch: master
+      node_js: "12"
