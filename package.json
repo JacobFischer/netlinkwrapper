@@ -25,8 +25,8 @@
   },
   "devDependencies": {
     "jaguarjs-jsdoc": "github:JacobFischer/jaguarjs-jsdoc",
-    "jsdoc": "3.5.5",
-    "mocha": "5.2.0",
+    "jsdoc": "3.6.2",
+    "mocha": "6.1.4",
     "shx": "0.3.2"
   },
   "scripts": {
