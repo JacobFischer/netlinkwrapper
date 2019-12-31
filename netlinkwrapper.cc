@@ -24,7 +24,7 @@ void NetLinkWrapper::Init(Local<Object> exports)
 
     // Prepare constructor template
     Local<FunctionTemplate> tpl = FunctionTemplate::New(isolate, New);
-    tpl->SetClassName(String::NewFromUtf8(isolate, "NetLinkWrapper").ToLocalChecked());
+    tpl->SetClassName(Nan::New<String>("NetLinkWrapper").ToLocalChecked());
     tpl->InstanceTemplate()->SetInternalFieldCount(1);
 
     // Prototype
@@ -69,13 +69,13 @@ void NetLinkWrapper::Connect(const FunctionCallbackInfo<Value>& args)
 
     if(args.Length() != 2 && args.Length() != 1)
     {
-        isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "'connect' requires the arguments port and optionally host").ToLocalChecked()));
+        isolate->ThrowException(Exception::TypeError(Nan::New<String>("'connect' requires the arguments port and optionally host").ToLocalChecked()));
         return;
     }
 
     if(!args[0]->IsNumber())
     {
-        isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "'connect' second arg should be number for port on server").ToLocalChecked()));
+        isolate->ThrowException(Exception::TypeError(Nan::New<String>("'connect' second arg should be number for port on server").ToLocalChecked()));
         return;
     }
     int port = (int)args[0]->NumberValue(isolate->GetCurrentContext()).FromJust();
@@ -93,7 +93,7 @@ void NetLinkWrapper::Connect(const FunctionCallbackInfo<Value>& args)
     }
     catch(NL::Exception& e)
     {
-        isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, e.what()).ToLocalChecked()));
+        isolate->ThrowException(Exception::TypeError(Nan::New<String>(e.what()).ToLocalChecked()));
         return;
     }
 }
@@ -114,7 +114,7 @@ void NetLinkWrapper::Blocking(const FunctionCallbackInfo<Value>& args)
         }
         catch(NL::Exception& e)
         {
-            isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, e.what()).ToLocalChecked()));
+            isolate->ThrowException(Exception::TypeError(Nan::New<String>(e.what()).ToLocalChecked()));
             return;
         }
         args.GetReturnValue().Set(Boolean::New(isolate, blocking));
@@ -123,23 +123,29 @@ void NetLinkWrapper::Blocking(const FunctionCallbackInfo<Value>& args)
     {
         if(!args[0]->IsBoolean())
         {
-            isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "first optional arg when passed must be boolean to set blocking to").ToLocalChecked()));
+            isolate->ThrowException(Exception::TypeError(Nan::New<String>("first optional arg when passed must be boolean to set blocking to").ToLocalChecked()));
             return;
         }
 
         try
         {
-            obj->socket->blocking(args[0]->BooleanValue(args.GetIsolate()));
+            bool blocking = false;
+            auto localMaybeBlocking = Nan::To<v8::Boolean>(args[0]);
+            if (!localMaybeBlocking.IsEmpty()) {
+                auto blockingV8 = localMaybeBlocking.ToLocalChecked().As<v8::Boolean>();
+                blocking = blockingV8->Value();
+            }
+            obj->socket->blocking(blocking);
         }
         catch(NL::Exception& e)
         {
-            isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, e.what()).ToLocalChecked()));
+            isolate->ThrowException(Exception::TypeError(Nan::New<String>(e.what()).ToLocalChecked()));
             return;
         }
     }
     else
     {
-        isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "too many args sent to blocking").ToLocalChecked()));
+        isolate->ThrowException(Exception::TypeError(Nan::New<String>("too many args sent to blocking").ToLocalChecked()));
         return;
     }
 }
@@ -153,7 +159,7 @@ void NetLinkWrapper::Read(const FunctionCallbackInfo<Value>& args)
 
     if((args.Length() != 1 && args.Length() != 2) || !args[0]->IsNumber())
     {
-        isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "'read' first argument must be a number representing how many bytes to try to read").ToLocalChecked()));
+        isolate->ThrowException(Exception::TypeError(Nan::New<String>("'read' first argument must be a number representing how many bytes to try to read").ToLocalChecked()));
         return;
     }
     size_t bufferSize = (int)args[0]->NumberValue(isolate->GetCurrentContext()).FromJust();
@@ -162,11 +168,17 @@ void NetLinkWrapper::Read(const FunctionCallbackInfo<Value>& args)
     if(args.Length() == 2 && args[0]->IsBoolean()) {
         try
         {
-            obj->socket->blocking(args[1]->BooleanValue(args.GetIsolate()));
+            bool blocking = false;
+            auto localMaybeBlocking = Nan::To<v8::Boolean>(args[1]);
+            if (!localMaybeBlocking.IsEmpty()) {
+                auto blockingV8 = localMaybeBlocking.ToLocalChecked().As<v8::Boolean>();
+                blocking = blockingV8->Value();
+            }
+            obj->socket->blocking(blocking);
         }
         catch(NL::Exception& e)
         {
-            isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, e.what()).ToLocalChecked()));
+            isolate->ThrowException(Exception::TypeError(Nan::New<String>(e.what()).ToLocalChecked()));
             return;
         }
     }
@@ -178,14 +190,14 @@ void NetLinkWrapper::Read(const FunctionCallbackInfo<Value>& args)
     }
     catch(NL::Exception& e)
     {
-        isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, e.what()).ToLocalChecked()));
+        isolate->ThrowException(Exception::TypeError(Nan::New<String>(e.what()).ToLocalChecked()));
         return;
     }
 
     if(bufferRead > -1 && bufferRead <= (int)bufferSize) // range check
     {
         std::string read(buffer, bufferRead);
-        args.GetReturnValue().Set(v8::String::NewFromUtf8(isolate, read.c_str()).ToLocalChecked());
+        args.GetReturnValue().Set(Nan::New<String>(read.c_str()).ToLocalChecked());
     }
     //else it did not read any data, so this will return undefined
 
@@ -201,7 +213,7 @@ void NetLinkWrapper::Write(const FunctionCallbackInfo<Value>& args)
 
     if(args.Length() != 1 || !args[0]->IsString())
     {
-        isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "'send' first argument must be a string to send").ToLocalChecked()));
+        isolate->ThrowException(Exception::TypeError(Nan::New<String>("'send' first argument must be a string to send").ToLocalChecked()));
         return;
     }
     Nan::Utf8String param1(args[0]);
@@ -213,7 +225,7 @@ void NetLinkWrapper::Write(const FunctionCallbackInfo<Value>& args)
     }
     catch(NL::Exception& e)
     {
-        isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, e.what()).ToLocalChecked()));
+        isolate->ThrowException(Exception::TypeError(Nan::New<String>(e.what()).ToLocalChecked()));
         return;
     }
 }
@@ -231,7 +243,7 @@ void NetLinkWrapper::Disconnect(const FunctionCallbackInfo<Value>& args)
     }
     catch(NL::Exception& e)
     {
-        isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, e.what()).ToLocalChecked()));
+        isolate->ThrowException(Exception::TypeError(Nan::New<String>(e.what()).ToLocalChecked()));
         return;
     }
 }
