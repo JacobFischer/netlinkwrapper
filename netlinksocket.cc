@@ -1,9 +1,7 @@
 #include <node.h>
 #include "netlinkwrapper.h"
 
-using namespace v8;
-
-void InitAll(Local<Object> exports)
+void InitAll(v8::Local<v8::Object> exports)
 {
     NetLinkWrapper::Init(exports);
 }

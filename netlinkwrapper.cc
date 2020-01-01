@@ -2,9 +2,7 @@
 #include "netlinkwrapper.h"
 #include "netlink/exception.h"
 
-using namespace v8;
-
-Persistent<Function> NetLinkWrapper::constructor;
+v8::Persistent<v8::Function> NetLinkWrapper::constructor;
 
 NetLinkWrapper::NetLinkWrapper()
 {
@@ -18,13 +16,13 @@ NetLinkWrapper::~NetLinkWrapper()
     }
 }
 
-void NetLinkWrapper::Init(Local<Object> exports)
+void NetLinkWrapper::Init(v8::Local<v8::Object> exports)
 {
-    Isolate* isolate = Isolate::GetCurrent();
+    auto isolate = v8::Isolate::GetCurrent();
 
     // Prepare constructor template
-    Local<FunctionTemplate> tpl = FunctionTemplate::New(isolate, New);
-    tpl->SetClassName(Nan::New<String>("NetLinkWrapper").ToLocalChecked());
+    v8::Local<v8::FunctionTemplate> tpl = v8::FunctionTemplate::New(isolate, New);
+    tpl->SetClassName(Nan::New<v8::String>("NetLinkWrapper").ToLocalChecked());
     tpl->InstanceTemplate()->SetInternalFieldCount(1);
 
     // Prototype
@@ -35,13 +33,13 @@ void NetLinkWrapper::Init(Local<Object> exports)
     NODE_SET_PROTOTYPE_METHOD(tpl, "disconnect", Disconnect);
 
     constructor.Reset(isolate, Nan::GetFunction(tpl).ToLocalChecked());
-    Nan::Set(exports, Nan::New<String>("NetLinkWrapper").ToLocalChecked(), Nan::GetFunction(tpl).ToLocalChecked());
+    Nan::Set(exports, Nan::New<v8::String>("NetLinkWrapper").ToLocalChecked(), Nan::GetFunction(tpl).ToLocalChecked());
 }
 
-void NetLinkWrapper::New(const FunctionCallbackInfo<Value>& args)
+void NetLinkWrapper::New(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
-    Isolate* isolate = Isolate::GetCurrent();
-    HandleScope scope(isolate);
+    auto isolate = v8::Isolate::GetCurrent();
+    v8::HandleScope scope(isolate);
 
     if (args.IsConstructCall())
     {
@@ -54,28 +52,28 @@ void NetLinkWrapper::New(const FunctionCallbackInfo<Value>& args)
     {
         // Invoked as plain function `NetLinkWrapper(...)`, turn into construct call.
         const int argc = 1;
-        Local<Value> argv[argc] = { args[0] };
-        Local<Function> cons = Local<Function>::New(isolate, constructor);
+        v8::Local<v8::Value> argv[argc] = { args[0] };
+        v8::Local<v8::Function> cons = v8::Local<v8::Function>::New(isolate, constructor);
         args.GetReturnValue().Set(Nan::NewInstance(cons, argc, argv).ToLocalChecked());
     }
 }
 
-void NetLinkWrapper::Connect(const FunctionCallbackInfo<Value>& args)
+void NetLinkWrapper::Connect(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
-    Isolate* isolate = Isolate::GetCurrent();
-    HandleScope scope(isolate);
+    auto isolate = v8::Isolate::GetCurrent();
+    v8::HandleScope scope(isolate);
 
     NetLinkWrapper* obj = ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
 
-    if(args.Length() != 2 && args.Length() != 1)
+    if (args.Length() != 2 && args.Length() != 1)
     {
-        isolate->ThrowException(Exception::TypeError(Nan::New<String>("'connect' requires the arguments port and optionally host").ToLocalChecked()));
+        isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>("'connect' requires the arguments port and optionally host").ToLocalChecked()));
         return;
     }
 
     if(!args[0]->IsNumber())
     {
-        isolate->ThrowException(Exception::TypeError(Nan::New<String>("'connect' second arg should be number for port on server").ToLocalChecked()));
+        isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>("'connect' second arg should be number for port on server").ToLocalChecked()));
         return;
     }
     int port = (int)args[0]->NumberValue(isolate->GetCurrentContext()).FromJust();
@@ -93,15 +91,15 @@ void NetLinkWrapper::Connect(const FunctionCallbackInfo<Value>& args)
     }
     catch(NL::Exception& e)
     {
-        isolate->ThrowException(Exception::TypeError(Nan::New<String>(e.what()).ToLocalChecked()));
+        isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>(e.what()).ToLocalChecked()));
         return;
     }
 }
 
-void NetLinkWrapper::Blocking(const FunctionCallbackInfo<Value>& args)
+void NetLinkWrapper::Blocking(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
-    Isolate* isolate = Isolate::GetCurrent();
-    HandleScope scope(isolate);
+    auto isolate = v8::Isolate::GetCurrent();
+    v8::HandleScope scope(isolate);
 
     NetLinkWrapper* obj = ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
 
@@ -114,16 +112,16 @@ void NetLinkWrapper::Blocking(const FunctionCallbackInfo<Value>& args)
         }
         catch(NL::Exception& e)
         {
-            isolate->ThrowException(Exception::TypeError(Nan::New<String>(e.what()).ToLocalChecked()));
+            isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>(e.what()).ToLocalChecked()));
             return;
         }
-        args.GetReturnValue().Set(Boolean::New(isolate, blocking));
+        args.GetReturnValue().Set(v8::Boolean::New(isolate, blocking));
     }
     else if(args.Length() == 1)
     {
         if(!args[0]->IsBoolean())
         {
-            isolate->ThrowException(Exception::TypeError(Nan::New<String>("first optional arg when passed must be boolean to set blocking to").ToLocalChecked()));
+            isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>("first optional arg when passed must be boolean to set blocking to").ToLocalChecked()));
             return;
         }
 
@@ -139,27 +137,27 @@ void NetLinkWrapper::Blocking(const FunctionCallbackInfo<Value>& args)
         }
         catch(NL::Exception& e)
         {
-            isolate->ThrowException(Exception::TypeError(Nan::New<String>(e.what()).ToLocalChecked()));
+            isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>(e.what()).ToLocalChecked()));
             return;
         }
     }
     else
     {
-        isolate->ThrowException(Exception::TypeError(Nan::New<String>("too many args sent to blocking").ToLocalChecked()));
+        isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>("too many args sent to blocking").ToLocalChecked()));
         return;
     }
 }
 
-void NetLinkWrapper::Read(const FunctionCallbackInfo<Value>& args)
+void NetLinkWrapper::Read(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
-    Isolate* isolate = Isolate::GetCurrent();
-    HandleScope scope(isolate);
+    auto isolate = v8::Isolate::GetCurrent();
+    v8::HandleScope scope(isolate);
 
     NetLinkWrapper* obj = ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
 
     if((args.Length() != 1 && args.Length() != 2) || !args[0]->IsNumber())
     {
-        isolate->ThrowException(Exception::TypeError(Nan::New<String>("'read' first argument must be a number representing how many bytes to try to read").ToLocalChecked()));
+        isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>("'read' first argument must be a number representing how many bytes to try to read").ToLocalChecked()));
         return;
     }
     size_t bufferSize = (int)args[0]->NumberValue(isolate->GetCurrentContext()).FromJust();
@@ -178,7 +176,7 @@ void NetLinkWrapper::Read(const FunctionCallbackInfo<Value>& args)
         }
         catch(NL::Exception& e)
         {
-            isolate->ThrowException(Exception::TypeError(Nan::New<String>(e.what()).ToLocalChecked()));
+            isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>(e.what()).ToLocalChecked()));
             return;
         }
     }
@@ -190,30 +188,30 @@ void NetLinkWrapper::Read(const FunctionCallbackInfo<Value>& args)
     }
     catch(NL::Exception& e)
     {
-        isolate->ThrowException(Exception::TypeError(Nan::New<String>(e.what()).ToLocalChecked()));
+        isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>(e.what()).ToLocalChecked()));
         return;
     }
 
     if(bufferRead > -1 && bufferRead <= (int)bufferSize) // range check
     {
         std::string read(buffer, bufferRead);
-        args.GetReturnValue().Set(Nan::New<String>(read.c_str()).ToLocalChecked());
+        args.GetReturnValue().Set(Nan::New<v8::String>(read.c_str()).ToLocalChecked());
     }
     //else it did not read any data, so this will return undefined
 
     delete[] buffer;
 }
 
-void NetLinkWrapper::Write(const FunctionCallbackInfo<Value>& args)
+void NetLinkWrapper::Write(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
-    Isolate* isolate = Isolate::GetCurrent();
-    HandleScope scope(isolate);
+    auto isolate = v8::Isolate::GetCurrent();
+    v8::HandleScope scope(isolate);
 
     NetLinkWrapper* obj = ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
 
     if(args.Length() != 1 || !args[0]->IsString())
     {
-        isolate->ThrowException(Exception::TypeError(Nan::New<String>("'send' first argument must be a string to send").ToLocalChecked()));
+        isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>("'send' first argument must be a string to send").ToLocalChecked()));
         return;
     }
     Nan::Utf8String param1(args[0]);
@@ -225,15 +223,15 @@ void NetLinkWrapper::Write(const FunctionCallbackInfo<Value>& args)
     }
     catch(NL::Exception& e)
     {
-        isolate->ThrowException(Exception::TypeError(Nan::New<String>(e.what()).ToLocalChecked()));
+        isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>(e.what()).ToLocalChecked()));
         return;
     }
 }
 
-void NetLinkWrapper::Disconnect(const FunctionCallbackInfo<Value>& args)
+void NetLinkWrapper::Disconnect(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
-    Isolate* isolate = Isolate::GetCurrent();
-    HandleScope scope(isolate);
+    auto isolate = v8::Isolate::GetCurrent();
+    v8::HandleScope scope(isolate);
 
     NetLinkWrapper* obj = ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
 
@@ -243,7 +241,7 @@ void NetLinkWrapper::Disconnect(const FunctionCallbackInfo<Value>& args)
     }
     catch(NL::Exception& e)
     {
-        isolate->ThrowException(Exception::TypeError(Nan::New<String>(e.what()).ToLocalChecked()));
+        isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>(e.what()).ToLocalChecked()));
         return;
     }
 }
