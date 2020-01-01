@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog]
 and this project adheres to [Semantic Versioning].
 
+## [1.2.0] - 2020-1-1
+### Fixed
+- Support for Node v13 builds [#13], [#14]
+- Fixes build warnings for unused variable `value_`
+### Changed
+- Node v6 is no longer LTS thus dropped from support here
+
 ## [1.1.2] - 2019-7-3
 ### Fixed
 - Fixes for node supporting versions 6 through 12 (current) [#9]
@@ -15,7 +22,7 @@ and this project adheres to [Semantic Versioning].
 ## [1.1.0] - 2018-9-1
 ### Fixed
 - Build now works with Node.js v10 [#4]
-- Updated dependencies to latest to resolve security concerns.
+- Updated dependencies to latest to resolve security concerns
 
 ### Added
 - TypeScript definitions.
@@ -23,7 +30,7 @@ and this project adheres to [Semantic Versioning].
 - TravisCI integration
 
 ## [1.0.0] - 2016-11-22
-### Fixes
+### Fixed
 - OSX builds working [#2]
 
 ### Added
@@ -32,10 +39,14 @@ and this project adheres to [Semantic Versioning].
 ## [0.0.1] - 2015-11-23
 - Initial release
 
+[#14]: https://github.com/JacobFischer/netlinkwrapper/pull/14
+[#13]: https://github.com/JacobFischer/netlinkwrapper/pull/13
 [#9]: https://github.com/JacobFischer/netlinkwrapper/pull/9
 [#6]: https://github.com/JacobFischer/netlinkwrapper/pull/6
 [#4]: https://github.com/JacobFischer/netlinkwrapper/pull/4
 [#2]: https://github.com/JacobFischer/netlinkwrapper/pull/2
+[1.2.0]: https://github.com/JacobFischer/netlinkwrapper/releases/tag/v1.2.0
+[1.1.2]: https://github.com/JacobFischer/netlinkwrapper/releases/tag/v1.1.2
 [1.1.1]: https://github.com/JacobFischer/netlinkwrapper/releases/tag/v1.1.1
 [1.1.0]: https://github.com/JacobFischer/netlinkwrapper/releases/tag/v1.1.0
 [1.0.0]: https://github.com/JacobFischer/netlinkwrapper/releases/tag/v1.0.0
