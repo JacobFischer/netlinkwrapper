@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog]
 and this project adheres to [Semantic Versioning].
 
-## [1.2.0] - 2020-11-7
+## [1.2.1] - 2020-11-7
 ### Security
 - Updated dependencies to latest to resolve security concerns
 
@@ -49,11 +49,14 @@ and this project adheres to [Semantic Versioning].
 [#6]: https://github.com/JacobFischer/netlinkwrapper/pull/6
 [#4]: https://github.com/JacobFischer/netlinkwrapper/pull/4
 [#2]: https://github.com/JacobFischer/netlinkwrapper/pull/2
+
+[1.2.1]: https://github.com/JacobFischer/netlinkwrapper/releases/tag/v1.2.1
 [1.2.0]: https://github.com/JacobFischer/netlinkwrapper/releases/tag/v1.2.0
 [1.1.2]: https://github.com/JacobFischer/netlinkwrapper/releases/tag/v1.1.2
 [1.1.1]: https://github.com/JacobFischer/netlinkwrapper/releases/tag/v1.1.1
 [1.1.0]: https://github.com/JacobFischer/netlinkwrapper/releases/tag/v1.1.0
 [1.0.0]: https://github.com/JacobFischer/netlinkwrapper/releases/tag/v1.0.0
 [0.0.1]: https://github.com/JacobFischer/netlinkwrapper/releases/tag/v0.0.1
+
 [Keep a Changelog]: http://keepachangelog.com/en/1.0.0/
 [Semantic Versioning]: http://semver.org/spec/v2.0.0.html
