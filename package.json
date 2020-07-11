@@ -1,6 +1,6 @@
 {
   "name": "netlinkwrapper",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "This is a simple node-gyp module wrapper for the C++ library netLink v1.0.0_pre6",
   "author": "JacobFischer <jacob.t.fischer@gmail.com>",
   "main": "main.js",
@@ -21,12 +21,12 @@
   "types": "index.d.ts",
   "dependencies": {
     "bindings": "1.5.0",
-    "nan": "2.14.0"
+    "nan": "2.14.1"
   },
   "devDependencies": {
     "jaguarjs-jsdoc": "github:JacobFischer/jaguarjs-jsdoc",
-    "jsdoc": "3.6.2",
-    "mocha": "6.1.4",
+    "jsdoc": "3.6.4",
+    "mocha": "8.0.1",
     "shx": "0.3.2"
   },
   "scripts": {

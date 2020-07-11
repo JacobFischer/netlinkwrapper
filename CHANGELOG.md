@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog]
 and this project adheres to [Semantic Versioning].
 
+## [1.2.0] - 2020-11-7
+### Security
+- Updated dependencies to latest to resolve security concerns
+
 ## [1.2.0] - 2020-1-1
 ### Fixed
 - Support for Node v13 builds [#13], [#14]
