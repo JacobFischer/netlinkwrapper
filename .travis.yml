@@ -7,6 +7,9 @@ node_js:
 script:
   # this builds the module, if it fails the build did not pass
   - npm install
+  - npm run prettier:check
+  - npm run lint
+  - npm run build
   - npm test
 
 before_deploy:

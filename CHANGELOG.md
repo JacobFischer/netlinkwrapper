@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog]
 and this project adheres to [Semantic Versioning].
 
+## [2.0.0] - 2020-17-7
+### Changes
+- **Breaking**: The shape of this module is no longer just a CommonJS export.
+    - Instead it is an ES Module.
+    - Exported both as both the `default` and the named export `netLinkWrapper`.
+    - Use whichever paradigm you prefer.
+- `NetLinkWrapper.write(data)` now accepts a `string` or `Buffer` type.
+    - Used to accept only `string`.
+
 ## [1.2.1] - 2020-11-7
 ### Security
 - Updated dependencies to latest to resolve security concerns

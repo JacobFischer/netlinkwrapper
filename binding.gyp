@@ -2,12 +2,14 @@
   "targets": [
     {
       "target_name": "netlinksocket",
-      "sources": [ "netlinksocket.cc", "netlinkwrapper.cc",
-        "netlink/core.cc",
-        "netlink/smart_buffer.cc",
-        "netlink/socket.cc",
-        "netlink/socket_group.cc",
-        "netlink/util.cc"
+      "sources": [
+        "src/cpp/netlinksocket.cc",
+        "src/cpp/netlinkwrapper.cc",
+        "src/cpp/netlink/core.cc",
+        "src/cpp/netlink/smart_buffer.cc",
+        "src/cpp/netlink/socket.cc",
+        "src/cpp/netlink/socket_group.cc",
+        "src/cpp/netlink/util.cc"
       ],
       "cflags": [ "-fexceptions" ],
       "cflags_cc": [ "-fexceptions" ],

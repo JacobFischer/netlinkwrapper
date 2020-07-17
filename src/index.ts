@@ -2,7 +2,7 @@
  * A simple synchronous TCP module wrapping the netlink library for simple
  * IO.
  */
-declare class NetLinkWrapper {
+export declare class NetLinkWrapper {
     /**
      * Constructs a netlinkwrapper, taking no arguments
      * NOTE: It is not connected to anything after creations. Use `connect`
@@ -12,7 +12,7 @@ declare class NetLinkWrapper {
 
     /**
      * A synchronous version of net.Socket.connect(port[, host]).
-     * Note: it does not accept a connectListener as part of the argument
+     * Note: it does not accept a connectListener as part of the argument.
      *
      * @param port - The port to connect to.
      * @param host - The host to connect to, defaults to `127.0.0.1`.
@@ -46,7 +46,7 @@ declare class NetLinkWrapper {
     blocking(blocking?: boolean): boolean | void;
 
     /**
-     * Reads a socket for data. Basically a replacement for on('data');
+     * Reads a socket for data. Basically a replacement for on('data');.
      *
      * @param {number} buffer - How many bytes to read from the buffer.
      * @param {boolean} [blocking] - If passed sets the blocking mode,
@@ -69,4 +69,11 @@ declare class NetLinkWrapper {
     disconnect(): void;
 }
 
-export = NetLinkWrapper;
+import bindings from "bindings";
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+const mod: { NetLinkWrapper: typeof NetLinkWrapper } = bindings(
+    "netlinksocket",
+);
+
+export const netLinkWrapper = mod.NetLinkWrapper;
+export default netLinkWrapper;
