@@ -10,6 +10,7 @@ export class EchoServer {
     public readonly port = 40820;
 
     public readonly server: Server;
+    public readonly listeners = new Set<Socket>();
 
     public readonly events = events({
         newConnection: new Event<Socket>(),
@@ -25,7 +26,9 @@ export class EchoServer {
 
     constructor() {
         this.server = createServer((socket) => {
+            this.listeners.add(socket);
             socket.on("close", (hadError) => {
+                this.listeners.delete(socket);
                 this.events.closedConnection.emit({ socket, hadError });
             });
             this.events.newConnection.emit(socket);
@@ -67,5 +70,22 @@ export class EchoServer {
                 }
             });
         });
+    }
+
+    public broadcast(data: string): Promise<unknown> {
+        return Promise.all(
+            Array.from(this.listeners).map(
+                (listener) =>
+                    new Promise((resolve, reject) =>
+                        listener.write(data, (err) => {
+                            if (err) {
+                                reject(err);
+                            } else {
+                                resolve();
+                            }
+                        }),
+                    ),
+            ),
+        );
     }
 }

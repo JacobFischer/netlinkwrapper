@@ -19,13 +19,15 @@ afterAll(async () => {
 });
 
 describe("netLinkWrapper", () => {
-    it("is a function", () => {
+    it("constructs", () => {
         expect(typeof netLinkWrapper.prototype.connect).toBe("function");
+
+        const netLink = new netLinkWrapper();
+        expect(netLink).toBeInstanceOf(netLinkWrapper);
     });
 
     it("can connect and disconnect", async () => {
         const connectionPromise = server.events.newConnection.once();
-
         const netLink = new netLinkWrapper();
 
         // should not be connected yet
@@ -47,7 +49,7 @@ describe("netLinkWrapper", () => {
         expect(disconnected.hadError).toBe(false);
     });
 
-    it("can write strings", async () => {
+    it("can read and write strings", async () => {
         const dataPromise = server.events.sentData.once();
         const listenerPromise = server.events.newConnection.once();
 
@@ -58,12 +60,43 @@ describe("netLinkWrapper", () => {
         const sending = "Make it so number one.";
         netLink.write(sending);
         const sent = await dataPromise;
-        expect(sent.data.toString()).toStrictEqual(sending);
+        const sentString = sent.data.toString();
+        expect(sentString).toStrictEqual(sending);
         expect(sent.socket).toStrictEqual(listener);
 
-        netLink.read(1024);
+        const read = netLink.read(1024);
+        expect(read).toStrictEqual(sentString);
         netLink.disconnect();
         await server.events.closedConnection.once();
     });
-    //*/
+
+    it("can do non blocking reads", async () => {
+        const netLink = new netLinkWrapper();
+        netLink.connect(server.port);
+        netLink.blocking(false);
+
+        const read = netLink.read(1024);
+        expect(read).toBeUndefined();
+        netLink.disconnect();
+        await server.events.closedConnection.once();
+    });
+
+    /*
+    // TODO: spin up server on real seperate thread so this one can be properly blocked
+    it("can do blocking reads", async () => {
+        const netLink = new netLinkWrapper();
+        netLink.connect(server.port);
+        netLink.blocking(true);
+
+        const broadcasted = "Jaffa kree!";
+        setTimeout(() => void server.broadcast(broadcasted), 250);
+
+        console.log("hey kids guess what, blocking!");
+        const read = netLink.read(broadcasted.length - 2); // should block here
+        console.log("we back", read);
+        expect(read).toStrictEqual(broadcasted);
+        netLink.disconnect();
+        await server.events.closedConnection.once();
+    });
+    */
 });
