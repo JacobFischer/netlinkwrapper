@@ -32,7 +32,7 @@ export class EchoServer {
 
             // echo all data back
             socket.on("data", (data) => {
-                // console.log("ECHO", data);
+                // console.log("ECHO", data.toString());
                 this.events.sentData.emit({ socket, data });
                 socket.write(data);
             });

@@ -2,9 +2,21 @@ import { Socket } from "net";
 import { netLinkWrapper } from "../src";
 import { EchoServer } from "./echo-server";
 
+const delay = (t: number) => new Promise((resolve) => setTimeout(resolve, t));
+
 const server = new EchoServer();
-beforeAll(async () => server.listen());
-afterAll(async () => server.close());
+beforeAll(async () => await server.listen());
+afterAll(async () => {
+    await server.close();
+    // HACK: here's the deal, mocha will tear down test workers before v8
+    // cleans up the sockets we are testing with
+    // If this happens on Mac/Linux system you will see segfaults **just** in
+    // tests. If it happens in Windows you can see that, and the port will
+    // remain blocked untill you kill processes or reboot your computer.
+    // Not condusive to testing.
+    // A 1 second delay solves all this magically :P
+    await delay(1000);
+});
 
 describe("netLinkWrapper", () => {
     it("is a function", () => {
@@ -44,13 +56,14 @@ describe("netLinkWrapper", () => {
         const listener = await listenerPromise;
 
         const sending = "Make it so number one.";
-        // console.log("about to send", sending);
         netLink.write(sending);
         const sent = await dataPromise;
-        expect(sent.data).toStrictEqual(sending);
+        expect(sent.data.toString()).toStrictEqual(sending);
         expect(sent.socket).toStrictEqual(listener);
 
+        netLink.read(1024);
         netLink.disconnect();
-        // await server.events.closedConnection.once();
+        await server.events.closedConnection.once();
     });
+    //*/
 });

@@ -6,6 +6,26 @@ const { resolve } = require("path");
 // https://jestjs.io/docs/en/configuration.html
 
 /** @type {Partial<import("@jest/types/build/Config").InitialOptions>} */
+/*
+const jestConfig = {
+    clearMocks: true,
+    collectCoverage: false,
+    coverageReporters: [],
+    moduleFileExtensions: ["ts", "js", "json", "node"],
+    rootDir: resolve(__dirname + "/../dist/test/"),
+    testEnvironment: "node",
+    testPathIgnorePatterns: [
+        "src/",
+        "/node_modules/",
+        "([^s]+).config.(js|ts|tsx)",
+        ".eslintrc.js(on)?",
+    ],
+    testRegex: "(/__tests__/.*|(\\.|/)(test|spec))\\.[jt]sx?$",
+    verbose: true,
+    useStderr: true,
+};
+*/
+
 const jestConfig = {
     clearMocks: true,
     collectCoverage: true,
