@@ -66,7 +66,8 @@ describe("netLinkWrapper", () => {
         expect(sent.socket).toStrictEqual(listener);
 
         const read = netLink.read(1024);
-        expect(read).toStrictEqual(sentString);
+        expect(read).toBeInstanceOf(Buffer);
+        expect(read && read.toString()).toStrictEqual(sentString);
         netLink.disconnect();
         await server.events.closedConnection.once();
     });

@@ -194,10 +194,9 @@ void NetLinkWrapper::Read(const v8::FunctionCallbackInfo<v8::Value>& args)
 
     if(bufferRead > -1 && bufferRead <= (int)bufferSize) // range check
     {
-        std::string read(buffer, bufferRead);
-        args.GetReturnValue().Set(Nan::New<v8::String>(read.c_str()).ToLocalChecked());
+        args.GetReturnValue().Set(Nan::NewBuffer(buffer, bufferRead).ToLocalChecked());
     }
-    //else it did not read any data, so this will return undefined
+    // else it did not read any data, so this will return undefined
 
     delete[] buffer;
 }
@@ -209,13 +208,12 @@ void NetLinkWrapper::Write(const v8::FunctionCallbackInfo<v8::Value>& args)
 
     NetLinkWrapper* obj = ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
 
-    /*
     bool valid = args.Length() > 0;
     std::string writing;
     if(valid)
     {
         auto arg = args[0];
-        if(arg->IsString()) {
+        if(arg->IsString() || arg->IsUint8Array()) {
             Nan::Utf8String param1(arg);
             writing = std::string(*param1);
         } else if (node::Buffer::HasInstance(arg)) {
@@ -229,15 +227,6 @@ void NetLinkWrapper::Write(const v8::FunctionCallbackInfo<v8::Value>& args)
         isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>("'send' first argument must be a string to send").ToLocalChecked()));
         return;
     }
-    */
-
-    if(args.Length() != 1 || !args[0]->IsString())
-    {
-        isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>("'send' first argument must be a string to send").ToLocalChecked()));
-        return;
-    }
-    Nan::Utf8String param1(args[0]);
-    std::string writing(*param1);
 
     try
     {
