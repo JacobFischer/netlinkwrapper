@@ -209,6 +209,28 @@ void NetLinkWrapper::Write(const v8::FunctionCallbackInfo<v8::Value>& args)
 
     NetLinkWrapper* obj = ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
 
+    /*
+    bool valid = args.Length() > 0;
+    std::string writing;
+    if(valid)
+    {
+        auto arg = args[0];
+        if(arg->IsString()) {
+            Nan::Utf8String param1(arg);
+            writing = std::string(*param1);
+        } else if (node::Buffer::HasInstance(arg)) {
+            writing = std::string(node::Buffer::Data(arg), node::Buffer::Length(arg));
+        } else {
+            valid = false;   
+        }
+    }
+
+    if (!valid) {
+        isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>("'send' first argument must be a string to send").ToLocalChecked()));
+        return;
+    }
+    */
+
     if(args.Length() != 1 || !args[0]->IsString())
     {
         isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>("'send' first argument must be a string to send").ToLocalChecked()));

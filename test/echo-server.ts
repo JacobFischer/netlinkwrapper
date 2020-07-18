@@ -12,6 +12,14 @@ export class EchoServer {
     public readonly server: Server;
     public readonly listeners = new Set<Socket>();
 
+    /**
+     * String formatter function used on echoed data.
+     *
+     * @param str - The string to format.
+     * @returns A new string formatted for the echo.
+     */
+    public readonly echoFormatter = (str: string): string => `Echo: '${str}'`;
+
     public readonly events = events({
         newConnection: new Event<Socket>(),
         closedConnection: new Event<{
@@ -20,7 +28,7 @@ export class EchoServer {
         }>(),
         sentData: new Event<{
             socket: Socket;
-            data: Buffer;
+            data: string;
         }>(),
     });
 
@@ -34,7 +42,8 @@ export class EchoServer {
             this.events.newConnection.emit(socket);
 
             // echo all data back
-            socket.on("data", (data) => {
+            socket.on("data", (buffer) => {
+                const data = this.echoFormatter(buffer.toString());
                 // console.log("ECHO", data.toString());
                 this.events.sentData.emit({ socket, data });
                 socket.write(data);

@@ -58,10 +58,11 @@ describe("netLinkWrapper", () => {
         const listener = await listenerPromise;
 
         const sending = "Make it so number one.";
+        const expectedEcho = server.echoFormatter(sending);
         netLink.write(sending);
         const sent = await dataPromise;
         const sentString = sent.data.toString();
-        expect(sentString).toStrictEqual(sending);
+        expect(sentString).toStrictEqual(expectedEcho);
         expect(sent.socket).toStrictEqual(listener);
 
         const read = netLink.read(1024);

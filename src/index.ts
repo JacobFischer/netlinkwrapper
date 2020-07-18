@@ -61,7 +61,7 @@ export declare class NetLinkWrapper {
      *
      * @param {string} data - The data to write to the socket.
      */
-    write(data: string): void;
+    write(data: string | Uint8Array | Buffer): void;
 
     /**
      * Disconnects/Destroys the connection.
