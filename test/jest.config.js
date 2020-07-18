@@ -38,6 +38,7 @@ const jestConfig = {
     ],
     testRegex: "(/__tests__/.*|(\\.|/)(test|spec))\\.[jt]sx?$",
     verbose: true,
+    useStderr: true,
 };
 
 module.exports = jestConfig;

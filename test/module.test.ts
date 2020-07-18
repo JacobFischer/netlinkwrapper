@@ -13,4 +13,9 @@ describe("module", () => {
     it("exports a function", () => {
         expect(typeof netLinkWrapper).toBe("function");
     });
+
+    it("constructs", () => {
+        const netLink = new netLinkWrapper();
+        expect(netLink).toBeInstanceOf(netLinkWrapper);
+    });
 });
