@@ -1,16 +1,38 @@
 import defaultExport, { netLinkWrapper } from "../src";
+import { expect } from "chai";
 
-describe("module", () => {
-    it("exists", () => {
-        expect(netLinkWrapper).toBeTruthy();
-        expect(defaultExport).toBeTruthy();
+describe("module", function () {
+    it("named export 'netLinkWrapper' exists", function () {
+        expect(netLinkWrapper).to.exist;
     });
 
-    it("is exported as named and default export", () => {
-        expect(netLinkWrapper).toStrictEqual(defaultExport);
+    it("default export exists", function () {
+        expect(defaultExport).to.exist;
     });
 
-    it("exports a function", () => {
-        expect(typeof netLinkWrapper).toBe("function");
+    it("named export and default export are the same", function () {
+        expect(netLinkWrapper).to.equal(defaultExport);
+    });
+
+    it("exports a function", function () {
+        expect(typeof netLinkWrapper).to.equal("function");
+    });
+
+    describe("prototype shape", function () {
+        for (const functionName of [
+            "blocking",
+            "connect",
+            "disconnect",
+            "read",
+            "write",
+        ]) {
+            it(`${functionName}() exists`, function () {
+                const proto = (netLinkWrapper.prototype as unknown) as Record<
+                    string,
+                    unknown
+                >;
+                expect(typeof proto[functionName]).to.equal("function");
+            });
+        }
     });
 });

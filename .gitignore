@@ -64,6 +64,9 @@ dist/
 build/
 temp/
 
+# vscode
+.vscode/
+
 # generated output
 out/
 docs/
