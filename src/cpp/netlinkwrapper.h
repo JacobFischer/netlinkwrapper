@@ -7,24 +7,24 @@
 
 class NetLinkWrapper : public node::ObjectWrap
 {
-    public:
-        static void Init(v8::Local<v8::Object> exports);
+public:
+    static void Init(v8::Local<v8::Object> exports);
 
-    private:
-        NL::Socket* socket;
+private:
+    NL::Socket *socket;
 
-        explicit NetLinkWrapper();
-        ~NetLinkWrapper();
+    explicit NetLinkWrapper();
+    ~NetLinkWrapper();
 
-        static void New(const v8::FunctionCallbackInfo<v8::Value>& args);
+    static void New(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-        static void Connect(const v8::FunctionCallbackInfo<v8::Value>& args);
-        static void Blocking(const v8::FunctionCallbackInfo<v8::Value>& args);
-        static void Read(const v8::FunctionCallbackInfo<v8::Value>& args);
-        static void Write(const v8::FunctionCallbackInfo<v8::Value>& args);
-        static void Disconnect(const v8::FunctionCallbackInfo<v8::Value>& args);
+    static void Connect(const v8::FunctionCallbackInfo<v8::Value> &args);
+    static void Blocking(const v8::FunctionCallbackInfo<v8::Value> &args);
+    static void Read(const v8::FunctionCallbackInfo<v8::Value> &args);
+    static void Write(const v8::FunctionCallbackInfo<v8::Value> &args);
+    static void Disconnect(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-        static v8::Persistent<v8::Function> constructor;
+    static v8::Persistent<v8::Function> constructor;
 };
 
 #endif
