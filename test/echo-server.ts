@@ -1,24 +1,15 @@
 import { createServer, Server, Socket } from "net";
 import { Event, events } from "ts-typed-events";
 
+export const port = 40820;
+
 /**
  * A simple Echo Server for testing.
  * Basically async/await syntax for clearer testing code.
  */
 export class EchoServer {
-    /** The port this server listens on. */
-    public readonly port = 40820;
-
-    public readonly server: Server;
-    public readonly listeners = new Set<Socket>();
-
-    /**
-     * String formatter function used on echoed data.
-     *
-     * @param str - The string to format.
-     * @returns A new string formatted for the echo.
-     */
-    public readonly echoFormatter = (str: string): string => `Echo: '${str}'`;
+    private readonly server: Server;
+    private readonly listeners = new Set<Socket>();
 
     public readonly events = events({
         newConnection: new Event<Socket>(),
@@ -43,7 +34,7 @@ export class EchoServer {
 
             // echo all data back
             socket.on("data", (buffer) => {
-                const data = this.echoFormatter(buffer.toString());
+                const data = buffer.toString();
                 // console.log("ECHO", data.toString());
                 this.events.sentData.emit({ socket, data });
                 socket.write(data);
@@ -52,9 +43,7 @@ export class EchoServer {
     }
 
     public listen(): Promise<void> {
-        return new Promise((resolve) =>
-            this.server.listen(this.port, resolve),
-        );
+        return new Promise((resolve) => this.server.listen(port, resolve));
     }
 
     public close(): Promise<void> {

@@ -1,7 +1,9 @@
 import { Socket } from "net";
 import { netLinkWrapper } from "../src";
-import { EchoServer } from "./echo-server";
+import { EchoServer, port } from "./echo-server";
 import { expect } from "chai";
+import { fork } from "child_process";
+import { join } from "path";
 
 // const delay = (t: number) => new Promise((resolve) => setTimeout(resolve, t));
 
@@ -35,7 +37,7 @@ describe("netLinkWrapper", function () {
         const preConnectionCount = await server.countConnections();
         expect(preConnectionCount).to.equal(0);
 
-        netLink.connect(server.port);
+        netLink.connect(port);
         const listener = await connectionPromise;
         expect(listener).to.be.instanceOf(Socket);
 
@@ -55,15 +57,14 @@ describe("netLinkWrapper", function () {
         const listenerPromise = server.events.newConnection.once();
 
         const netLink = new netLinkWrapper();
-        netLink.connect(server.port);
+        netLink.connect(port);
         const listener = await listenerPromise;
 
         const sending = "Make it so number one.";
-        const expectedEcho = server.echoFormatter(sending);
         netLink.write(sending);
         const sent = await dataPromise;
         const sentString = sent.data.toString();
-        expect(sentString).to.equal(expectedEcho);
+        expect(sentString).to.equal(sending); // should be echoed back
         expect(sent.socket).to.equal(listener);
 
         const read = netLink.read(1024);
@@ -75,7 +76,7 @@ describe("netLinkWrapper", function () {
 
     it("can do non blocking reads", async function () {
         const netLink = new netLinkWrapper();
-        netLink.connect(server.port);
+        netLink.connect(port);
         netLink.blocking(false);
 
         const read = netLink.read(1024);
@@ -84,22 +85,35 @@ describe("netLinkWrapper", function () {
         await server.events.closedConnection.once();
     });
 
-    /*
-    // TODO: spin up server on real seperate thread so this one can be properly blocked
-    it("can do blocking reads", async () => {
-        const netLink = new netLinkWrapper();
-        netLink.connect(server.port);
-        netLink.blocking(true);
+    it("can do blocking reads", async function () {
+        const testString = "Hello worker thread!";
+        const newConnectionPromise = server.events.newConnection.once();
+        const sentDataPromise = server.events.sentData.once();
+        // unlike other tests, the netlink tests are all in the worker code
+        const workerPath = join(__dirname, "./blocking-test-worker.js");
+        const worker = fork(workerPath, [], {
+            env: { testString },
+        });
 
-        const broadcasted = "Jaffa kree!";
-        setTimeout(() => void server.broadcast(broadcasted), 250);
+        await newConnectionPromise;
+        const sent = await sentDataPromise;
 
-        console.log("hey kids guess what, blocking!");
-        const read = netLink.read(broadcasted.length - 2); // should block here
-        console.log("we back", read);
-        expect(read).to.equal(broadcasted);
-        netLink.disconnect();
+        expect(sent.data).to.exist;
+        expect(sent.data && sent.data.toString()).to.equal(testString);
+
         await server.events.closedConnection.once();
+
+        const code = await new Promise((resolve, reject) =>
+            worker.on("exit", (code) => {
+                if (code) {
+                    reject(
+                        new Error(`Worker process exited with code ${code}`),
+                    );
+                } else {
+                    resolve(code);
+                }
+            }),
+        );
+        expect(code).to.equal(0);
     });
-    */
 });
