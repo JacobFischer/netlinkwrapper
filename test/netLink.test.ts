@@ -6,6 +6,7 @@ import { fork } from "child_process";
 import { join } from "path";
 
 // const delay = (t: number) => new Promise((resolve) => setTimeout(resolve, t));
+const localhost = "127.0.0.1";
 
 describe("netLinkWrapper", function () {
     const server = new EchoServer();
@@ -24,20 +25,12 @@ describe("netLinkWrapper", function () {
         // await delay(1000);
     });
 
-    it("constructs", function () {
-        const netLink = new netLinkWrapper();
-        expect(netLink).to.be.instanceOf(netLinkWrapper);
-    });
-
     it("can connect and disconnect", async function () {
         const connectionPromise = server.events.newConnection.once();
-        const netLink = new netLinkWrapper();
-
-        // should not be connected yet
         const preConnectionCount = await server.countConnections();
         expect(preConnectionCount).to.equal(0);
 
-        netLink.connect(port);
+        const netLink = new netLinkWrapper(localhost, port);
         const listener = await connectionPromise;
         expect(listener).to.be.instanceOf(Socket);
 
@@ -56,8 +49,7 @@ describe("netLinkWrapper", function () {
         const dataPromise = server.events.sentData.once();
         const listenerPromise = server.events.newConnection.once();
 
-        const netLink = new netLinkWrapper();
-        netLink.connect(port);
+        const netLink = new netLinkWrapper(localhost, port);
         const listener = await listenerPromise;
 
         const sending = "Make it so number one.";
@@ -74,10 +66,18 @@ describe("netLinkWrapper", function () {
         await server.events.closedConnection.once();
     });
 
+    it("can get blocking state", function () {
+        const netLink = new netLinkWrapper(localhost, port);
+        netLink.setBlocking(true);
+        expect(netLink.getBlocking()).to.be.true;
+        netLink.setBlocking(false);
+        expect(netLink.getBlocking()).to.be.false;
+        netLink.disconnect();
+    });
+
     it("can do non blocking reads", async function () {
-        const netLink = new netLinkWrapper();
-        netLink.connect(port);
-        netLink.blocking(false);
+        const netLink = new netLinkWrapper(localhost, port);
+        netLink.setBlocking(false);
 
         const read = netLink.read(1024);
         expect(read).to.be.undefined;

@@ -20,10 +20,10 @@ describe("module", function () {
 
     describe("prototype shape", function () {
         for (const functionName of [
-            "blocking",
-            "connect",
             "disconnect",
+            "getBlocking",
             "read",
+            "setBlocking",
             "write",
         ]) {
             it(`${functionName}() exists`, function () {

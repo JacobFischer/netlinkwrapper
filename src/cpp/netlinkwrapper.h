@@ -8,21 +8,38 @@
 class NetLinkWrapper : public node::ObjectWrap
 {
 public:
-    static void Init(v8::Local<v8::Object> exports);
+    static void init(v8::Local<v8::Object> exports);
 
 private:
     NL::Socket *socket;
 
-    explicit NetLinkWrapper();
+    explicit NetLinkWrapper(NL::Socket *socket);
     ~NetLinkWrapper();
 
-    static void New(const v8::FunctionCallbackInfo<v8::Value> &args);
+    static void new_client_tcp(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-    static void Connect(const v8::FunctionCallbackInfo<v8::Value> &args);
-    static void Blocking(const v8::FunctionCallbackInfo<v8::Value> &args);
-    static void Read(const v8::FunctionCallbackInfo<v8::Value> &args);
-    static void Write(const v8::FunctionCallbackInfo<v8::Value> &args);
-    static void Disconnect(const v8::FunctionCallbackInfo<v8::Value> &args);
+    static void accept(const v8::FunctionCallbackInfo<v8::Value> &args);
+    static void disconnect(const v8::FunctionCallbackInfo<v8::Value> &args);
+    static void get_blocking(const v8::FunctionCallbackInfo<v8::Value> &args);
+    static void get_host_from(const v8::FunctionCallbackInfo<v8::Value> &args);
+    static void get_host_to(const v8::FunctionCallbackInfo<v8::Value> &args);
+    static void get_listen_queue(const v8::FunctionCallbackInfo<v8::Value> &args);
+    static void get_next_read_size(const v8::FunctionCallbackInfo<v8::Value> &args);
+    static void get_port_from(const v8::FunctionCallbackInfo<v8::Value> &args);
+    static void get_port_to(const v8::FunctionCallbackInfo<v8::Value> &args);
+    static void get_socket_handler(const v8::FunctionCallbackInfo<v8::Value> &args);
+    static void is_blocking(const v8::FunctionCallbackInfo<v8::Value> &args);
+    static void is_client(const v8::FunctionCallbackInfo<v8::Value> &args);
+    static void is_ipv4(const v8::FunctionCallbackInfo<v8::Value> &args);
+    static void is_ipv6(const v8::FunctionCallbackInfo<v8::Value> &args);
+    static void is_server(const v8::FunctionCallbackInfo<v8::Value> &args);
+    static void is_tcp(const v8::FunctionCallbackInfo<v8::Value> &args);
+    static void is_udp(const v8::FunctionCallbackInfo<v8::Value> &args);
+    static void read(const v8::FunctionCallbackInfo<v8::Value> &args);
+    static void read_from(const v8::FunctionCallbackInfo<v8::Value> &args);
+    static void set_blocking(const v8::FunctionCallbackInfo<v8::Value> &args);
+    static void write(const v8::FunctionCallbackInfo<v8::Value> &args);
+    static void write_to(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static v8::Persistent<v8::Function> constructor;
 };

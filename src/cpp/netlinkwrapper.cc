@@ -4,8 +4,9 @@
 
 v8::Persistent<v8::Function> NetLinkWrapper::constructor;
 
-NetLinkWrapper::NetLinkWrapper()
+NetLinkWrapper::NetLinkWrapper(NL::Socket *socket)
 {
+    this->socket = socket;
 }
 
 NetLinkWrapper::~NetLinkWrapper()
@@ -16,178 +17,90 @@ NetLinkWrapper::~NetLinkWrapper()
     }
 }
 
-void NetLinkWrapper::Init(v8::Local<v8::Object> exports)
+void NetLinkWrapper::init(v8::Local<v8::Object> exports)
 {
     auto isolate = v8::Isolate::GetCurrent();
 
+    // https://stackoverflow.com/questions/28076382/v8-inherited-functiontemplate-not-getting-updates-to-the-parent-functiontemplate
+
     // Prepare constructor template
-    v8::Local<v8::FunctionTemplate> tpl = v8::FunctionTemplate::New(isolate, New);
+    v8::Local<v8::FunctionTemplate> tpl = v8::FunctionTemplate::New(isolate, new_client_tcp);
     tpl->SetClassName(Nan::New<v8::String>("NetLinkWrapper").ToLocalChecked());
     tpl->InstanceTemplate()->SetInternalFieldCount(1);
 
     // Prototype
-    NODE_SET_PROTOTYPE_METHOD(tpl, "connect", Connect);
-    NODE_SET_PROTOTYPE_METHOD(tpl, "blocking", Blocking);
-    NODE_SET_PROTOTYPE_METHOD(tpl, "read", Read);
-    NODE_SET_PROTOTYPE_METHOD(tpl, "write", Write);
-    NODE_SET_PROTOTYPE_METHOD(tpl, "disconnect", Disconnect);
+    NODE_SET_PROTOTYPE_METHOD(tpl, "accept", accept);
+    NODE_SET_PROTOTYPE_METHOD(tpl, "disconnect", disconnect);
+    NODE_SET_PROTOTYPE_METHOD(tpl, "getBlocking", get_blocking);
+    NODE_SET_PROTOTYPE_METHOD(tpl, "getHostFrom", get_host_from);
+    NODE_SET_PROTOTYPE_METHOD(tpl, "getHostTo", get_host_to);
+    NODE_SET_PROTOTYPE_METHOD(tpl, "getListenQueue", get_listen_queue);
+    NODE_SET_PROTOTYPE_METHOD(tpl, "getNextReadSize", get_next_read_size);
+    NODE_SET_PROTOTYPE_METHOD(tpl, "getPortFrom", get_port_from);
+    NODE_SET_PROTOTYPE_METHOD(tpl, "getPortTo", get_port_to);
+    NODE_SET_PROTOTYPE_METHOD(tpl, "getSocketHandler", get_socket_handler);
+    NODE_SET_PROTOTYPE_METHOD(tpl, "isBlocking", is_blocking);
+    NODE_SET_PROTOTYPE_METHOD(tpl, "isClient", is_client);
+    NODE_SET_PROTOTYPE_METHOD(tpl, "isServer", is_server);
+    NODE_SET_PROTOTYPE_METHOD(tpl, "isTCP", is_tcp);
+    NODE_SET_PROTOTYPE_METHOD(tpl, "isUDP", is_udp);
+    NODE_SET_PROTOTYPE_METHOD(tpl, "read", read);
+    NODE_SET_PROTOTYPE_METHOD(tpl, "readFrom", read_from);
+    NODE_SET_PROTOTYPE_METHOD(tpl, "setBlocking", set_blocking);
+    NODE_SET_PROTOTYPE_METHOD(tpl, "write", write);
+    NODE_SET_PROTOTYPE_METHOD(tpl, "writeTo", write_to);
 
     constructor.Reset(isolate, Nan::GetFunction(tpl).ToLocalChecked());
     Nan::Set(exports, Nan::New<v8::String>("NetLinkWrapper").ToLocalChecked(), Nan::GetFunction(tpl).ToLocalChecked());
 }
 
-void NetLinkWrapper::New(const v8::FunctionCallbackInfo<v8::Value> &args)
+void NetLinkWrapper::new_client_tcp(const v8::FunctionCallbackInfo<v8::Value> &args)
 {
     auto isolate = v8::Isolate::GetCurrent();
-    v8::HandleScope scope(isolate);
 
-    if (args.IsConstructCall())
-    {
-        // Invoked as constructor: `new NetLinkWrapper(...)`
-        NetLinkWrapper *obj = new NetLinkWrapper();
-        obj->Wrap(args.This());
-        args.GetReturnValue().Set(args.This());
-    }
-    else
+    if (!args.IsConstructCall())
     {
         // Invoked as plain function `NetLinkWrapper(...)`, turn into construct call.
         const int argc = 1;
         v8::Local<v8::Value> argv[argc] = {args[0]};
         v8::Local<v8::Function> cons = v8::Local<v8::Function>::New(isolate, constructor);
         args.GetReturnValue().Set(Nan::NewInstance(cons, argc, argv).ToLocalChecked());
-    }
-}
-
-void NetLinkWrapper::Connect(const v8::FunctionCallbackInfo<v8::Value> &args)
-{
-    auto isolate = v8::Isolate::GetCurrent();
-    v8::HandleScope scope(isolate);
-
-    NetLinkWrapper *obj = ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
-
-    if (args.Length() != 2 && args.Length() != 1)
-    {
-        isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>("'connect' requires the arguments port and optionally host").ToLocalChecked()));
         return;
     }
+    // else Invoked as constructor: `new NetLinkWrapper(...)`
 
-    if (!args[0]->IsNumber())
+    std::string host;
+    unsigned int port;
+    if (args.Length() >= 2)
     {
-        isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>("'connect' second arg should be number for port on server").ToLocalChecked()));
-        return;
-    }
-    int port = (int)args[0]->NumberValue(isolate->GetCurrentContext()).FromJust();
-
-    std::string server = "127.0.0.1";
-    if (args[1]->IsString())
-    {
-        Nan::Utf8String param1(args[1]);
-        server = std::string(*param1);
-    }
-
-    try
-    {
-        obj->socket = new NL::Socket(server, port);
-    }
-    catch (NL::Exception &e)
-    {
-        isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>(e.what()).ToLocalChecked()));
-        return;
-    }
-}
-
-void NetLinkWrapper::Blocking(const v8::FunctionCallbackInfo<v8::Value> &args)
-{
-    auto isolate = v8::Isolate::GetCurrent();
-    v8::HandleScope scope(isolate);
-
-    NetLinkWrapper *obj = ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
-
-    if (args.Length() == 0)
-    {
-        bool blocking = false;
-        try
+        auto arg_host = args[0];
+        if (!arg_host->IsString())
         {
-            blocking = obj->socket->blocking();
-        }
-        catch (NL::Exception &e)
-        {
-            isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>(e.what()).ToLocalChecked()));
+            isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>("'new NetLinkSocketClientTCP' first argument must be a host string to connect to").ToLocalChecked()));
             return;
         }
-        args.GetReturnValue().Set(v8::Boolean::New(isolate, blocking));
-    }
-    else if (args.Length() == 1)
-    {
-        if (!args[0]->IsBoolean())
-        {
-            isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>("first optional arg when passed must be boolean to set blocking to").ToLocalChecked()));
-            return;
-        }
+        Nan::Utf8String host_utf8_string(arg_host);
+        host = std::string(*host_utf8_string);
 
-        try
+        auto arg_port = args[1];
+        if (!arg_port->IsNumber())
         {
-            bool blocking = false;
-            auto localMaybeBlocking = Nan::To<v8::Boolean>(args[0]);
-            if (!localMaybeBlocking.IsEmpty())
-            {
-                auto blockingV8 = localMaybeBlocking.ToLocalChecked().As<v8::Boolean>();
-                blocking = blockingV8->Value();
-            }
-            obj->socket->blocking(blocking);
-        }
-        catch (NL::Exception &e)
-        {
-            isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>(e.what()).ToLocalChecked()));
+            isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>("'new NetLinkSocketClientTCP' second argument must be a port number to connect to").ToLocalChecked()));
             return;
         }
+        auto as_number = arg_port->NumberValue(isolate->GetCurrentContext()).FromJust();
+        port = static_cast<int>(as_number);
     }
     else
     {
-        isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>("too many args sent to blocking").ToLocalChecked()));
+        isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>("'new NetLinkSocketClientTCP' requires 2 arguments to be constructed").ToLocalChecked()));
         return;
     }
-}
 
-void NetLinkWrapper::Read(const v8::FunctionCallbackInfo<v8::Value> &args)
-{
-    auto isolate = v8::Isolate::GetCurrent();
-    v8::HandleScope scope(isolate);
-
-    NetLinkWrapper *obj = ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
-
-    if ((args.Length() != 1 && args.Length() != 2) || !args[0]->IsNumber())
-    {
-        isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>("'read' first argument must be a number representing how many bytes to try to read").ToLocalChecked()));
-        return;
-    }
-    size_t bufferSize = (int)args[0]->NumberValue(isolate->GetCurrentContext()).FromJust();
-    char *buffer = new char[bufferSize];
-
-    if (args.Length() == 2 && args[0]->IsBoolean())
-    {
-        try
-        {
-            bool blocking = false;
-            auto localMaybeBlocking = Nan::To<v8::Boolean>(args[1]);
-            if (!localMaybeBlocking.IsEmpty())
-            {
-                auto blockingV8 = localMaybeBlocking.ToLocalChecked().As<v8::Boolean>();
-                blocking = blockingV8->Value();
-            }
-            obj->socket->blocking(blocking);
-        }
-        catch (NL::Exception &e)
-        {
-            isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>(e.what()).ToLocalChecked()));
-            return;
-        }
-    }
-
-    int bufferRead = 0;
+    NL::Socket *socket;
     try
     {
-        bufferRead = obj->socket->read(buffer, bufferSize);
+        socket = new NL::Socket(host, port);
     }
     catch (NL::Exception &e)
     {
@@ -195,9 +108,366 @@ void NetLinkWrapper::Read(const v8::FunctionCallbackInfo<v8::Value> &args)
         return;
     }
 
-    if (bufferRead > -1 && bufferRead <= (int)bufferSize) // range check
+    NetLinkWrapper *obj = new NetLinkWrapper(socket);
+    obj->Wrap(args.This());
+    args.GetReturnValue().Set(args.This());
+}
+
+void NetLinkWrapper::accept(const v8::FunctionCallbackInfo<v8::Value> &args)
+{
+    auto socket = ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder())->socket;
+    auto isolate = v8::Isolate::GetCurrent();
+    // v8::HandleScope scope(isolate);
+
+    NL::Socket *accepted = NULL;
+    try
     {
-        std::string read(buffer, bufferRead);
+        accepted = socket->accept();
+    }
+    catch (NL::Exception &e)
+    {
+        isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>(e.what()).ToLocalChecked()));
+        return;
+    }
+
+    if (accepted != NULL)
+    {
+        // auto netLinkWrapper = new NetLinkWrapper(socket);
+        // TODO: do something with the socket, need to wrap in class
+    }
+}
+
+void NetLinkWrapper::disconnect(const v8::FunctionCallbackInfo<v8::Value> &args)
+{
+    auto obj = ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
+    auto isolate = v8::Isolate::GetCurrent();
+    // v8::HandleScope scope(isolate);
+
+    try
+    {
+        obj->socket->disconnect();
+    }
+    catch (NL::Exception &e)
+    {
+        isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>(e.what()).ToLocalChecked()));
+        return;
+    }
+}
+
+void NetLinkWrapper::get_blocking(const v8::FunctionCallbackInfo<v8::Value> &args)
+{
+    auto obj = ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
+    auto isolate = v8::Isolate::GetCurrent();
+
+    try
+    {
+        auto val = obj->socket->blocking();
+        args.GetReturnValue().Set(Nan::New(val));
+    }
+    catch (NL::Exception &e)
+    {
+        isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>(e.what()).ToLocalChecked()));
+        return;
+    }
+}
+
+void NetLinkWrapper::get_host_from(const v8::FunctionCallbackInfo<v8::Value> &args)
+{
+    auto obj = ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
+    auto isolate = v8::Isolate::GetCurrent();
+
+    try
+    {
+        auto hostFrom = obj->socket->hostFrom();
+        auto v8maybeString = v8::String::NewFromUtf8(isolate, hostFrom.c_str());
+        args.GetReturnValue().Set(v8maybeString.ToLocalChecked());
+    }
+    catch (NL::Exception &e)
+    {
+        isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>(e.what()).ToLocalChecked()));
+        return;
+    }
+}
+
+void NetLinkWrapper::get_host_to(const v8::FunctionCallbackInfo<v8::Value> &args)
+{
+    auto obj = ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
+    auto isolate = v8::Isolate::GetCurrent();
+    v8::HandleScope scope(isolate);
+
+    try
+    {
+        auto hostTo = obj->socket->hostTo();
+        auto v8maybeString = v8::String::NewFromUtf8(isolate, hostTo.c_str());
+        args.GetReturnValue().Set(v8maybeString.ToLocalChecked());
+    }
+    catch (NL::Exception &e)
+    {
+        isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>(e.what()).ToLocalChecked()));
+        return;
+    }
+}
+
+void NetLinkWrapper::get_listen_queue(const v8::FunctionCallbackInfo<v8::Value> &args)
+{
+    auto obj = ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
+    auto isolate = v8::Isolate::GetCurrent();
+    v8::HandleScope scope(isolate);
+
+    try
+    {
+        auto val = obj->socket->listenQueue();
+        auto v8_number = v8::Number::New(isolate, val);
+        args.GetReturnValue().Set(val);
+    }
+    catch (NL::Exception &e)
+    {
+        isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>(e.what()).ToLocalChecked()));
+        return;
+    }
+}
+
+void NetLinkWrapper::get_next_read_size(const v8::FunctionCallbackInfo<v8::Value> &args)
+{
+    auto obj = ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
+    auto isolate = v8::Isolate::GetCurrent();
+    v8::HandleScope scope(isolate);
+
+    try
+    {
+        auto val = obj->socket->nextReadSize();
+        auto v8_val = v8::Number::New(isolate, val);
+        args.GetReturnValue().Set(v8_val);
+    }
+    catch (NL::Exception &e)
+    {
+        isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>(e.what()).ToLocalChecked()));
+        return;
+    }
+}
+
+void NetLinkWrapper::get_port_from(const v8::FunctionCallbackInfo<v8::Value> &args)
+{
+    auto obj = ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
+    auto isolate = v8::Isolate::GetCurrent();
+    v8::HandleScope scope(isolate);
+
+    try
+    {
+        auto val = obj->socket->portFrom();
+        auto v8_val = v8::Number::New(isolate, val);
+        args.GetReturnValue().Set(v8_val);
+    }
+    catch (NL::Exception &e)
+    {
+        isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>(e.what()).ToLocalChecked()));
+        return;
+    }
+}
+
+void NetLinkWrapper::get_port_to(const v8::FunctionCallbackInfo<v8::Value> &args)
+{
+    auto obj = ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
+    auto isolate = v8::Isolate::GetCurrent();
+    v8::HandleScope scope(isolate);
+
+    try
+    {
+        auto val = obj->socket->portTo();
+        auto v8_val = v8::Number::New(isolate, val);
+        args.GetReturnValue().Set(v8_val);
+    }
+    catch (NL::Exception &e)
+    {
+        isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>(e.what()).ToLocalChecked()));
+        return;
+    }
+}
+
+void NetLinkWrapper::get_socket_handler(const v8::FunctionCallbackInfo<v8::Value> &args)
+{
+    auto obj = ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
+    auto isolate = v8::Isolate::GetCurrent();
+    v8::HandleScope scope(isolate);
+
+    try
+    {
+        auto val = obj->socket->socketHandler();
+        auto v8_val = v8::Number::New(isolate, val);
+        args.GetReturnValue().Set(v8_val);
+    }
+    catch (NL::Exception &e)
+    {
+        isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>(e.what()).ToLocalChecked()));
+        return;
+    }
+}
+
+void NetLinkWrapper::is_blocking(const v8::FunctionCallbackInfo<v8::Value> &args)
+{
+    auto obj = ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
+    auto isolate = v8::Isolate::GetCurrent();
+    v8::HandleScope scope(isolate);
+
+    try
+    {
+        auto val = obj->socket->blocking();
+        auto v8_val = v8::Boolean::New(isolate, val);
+        args.GetReturnValue().Set(v8_val);
+    }
+    catch (NL::Exception &e)
+    {
+        isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>(e.what()).ToLocalChecked()));
+        return;
+    }
+}
+
+void NetLinkWrapper::is_client(const v8::FunctionCallbackInfo<v8::Value> &args)
+{
+    auto obj = ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
+    auto isolate = v8::Isolate::GetCurrent();
+    v8::HandleScope scope(isolate);
+
+    try
+    {
+        auto val = obj->socket->type();
+        auto v8_val = v8::Boolean::New(isolate, val == NL::SocketType::CLIENT);
+        args.GetReturnValue().Set(v8_val);
+    }
+    catch (NL::Exception &e)
+    {
+        isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>(e.what()).ToLocalChecked()));
+        return;
+    }
+}
+
+void NetLinkWrapper::is_ipv4(const v8::FunctionCallbackInfo<v8::Value> &args)
+{
+    auto obj = ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
+    auto isolate = v8::Isolate::GetCurrent();
+    v8::HandleScope scope(isolate);
+
+    try
+    {
+        auto val = obj->socket->ipVer();
+        auto v8_val = v8::Boolean::New(isolate, val == NL::IPVer::IP4);
+        args.GetReturnValue().Set(v8_val);
+    }
+    catch (NL::Exception &e)
+    {
+        isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>(e.what()).ToLocalChecked()));
+        return;
+    }
+}
+
+void NetLinkWrapper::is_ipv6(const v8::FunctionCallbackInfo<v8::Value> &args)
+{
+    auto obj = ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
+    auto isolate = v8::Isolate::GetCurrent();
+    v8::HandleScope scope(isolate);
+
+    try
+    {
+        auto val = obj->socket->ipVer();
+        auto v8_val = v8::Boolean::New(isolate, val == NL::IPVer::IP6);
+        args.GetReturnValue().Set(v8_val);
+    }
+    catch (NL::Exception &e)
+    {
+        isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>(e.what()).ToLocalChecked()));
+        return;
+    }
+}
+
+void NetLinkWrapper::is_server(const v8::FunctionCallbackInfo<v8::Value> &args)
+{
+    auto obj = ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
+    auto isolate = v8::Isolate::GetCurrent();
+    v8::HandleScope scope(isolate);
+
+    try
+    {
+        auto val = obj->socket->type();
+        auto v8_val = v8::Boolean::New(isolate, val == NL::SocketType::SERVER);
+        args.GetReturnValue().Set(v8_val);
+    }
+    catch (NL::Exception &e)
+    {
+        isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>(e.what()).ToLocalChecked()));
+        return;
+    }
+}
+
+void NetLinkWrapper::is_tcp(const v8::FunctionCallbackInfo<v8::Value> &args)
+{
+    auto obj = ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
+    auto isolate = v8::Isolate::GetCurrent();
+    v8::HandleScope scope(isolate);
+
+    try
+    {
+        auto val = obj->socket->protocol();
+        auto v8_val = v8::Boolean::New(isolate, val == NL::Protocol::TCP);
+        args.GetReturnValue().Set(v8_val);
+    }
+    catch (NL::Exception &e)
+    {
+        isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>(e.what()).ToLocalChecked()));
+        return;
+    }
+}
+
+void NetLinkWrapper::is_udp(const v8::FunctionCallbackInfo<v8::Value> &args)
+{
+    auto obj = ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
+    auto isolate = v8::Isolate::GetCurrent();
+    v8::HandleScope scope(isolate);
+
+    try
+    {
+        auto val = obj->socket->protocol();
+        auto v8_val = v8::Boolean::New(isolate, val == NL::Protocol::UDP);
+        args.GetReturnValue().Set(v8_val);
+    }
+    catch (NL::Exception &e)
+    {
+        isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>(e.what()).ToLocalChecked()));
+        return;
+    }
+}
+
+void NetLinkWrapper::read(const v8::FunctionCallbackInfo<v8::Value> &args)
+{
+    auto socket = ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder())->socket;
+    auto isolate = v8::Isolate::GetCurrent();
+
+    size_t buffer_size = socket->nextReadSize();
+    if (args.Length() > 0)
+    {
+        auto arg = args[0];
+        if (!arg->IsNumber())
+        {
+            isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>("'read' first argument must be a number representing how many bytes to try to read").ToLocalChecked()));
+            return;
+        }
+        auto as_number = arg->NumberValue(isolate->GetCurrentContext()).FromJust();
+        buffer_size = static_cast<int>(as_number);
+    }
+    char *buffer = new char[buffer_size];
+    int buffer_read = 0;
+    try
+    {
+        buffer_read = socket->read(buffer, buffer_size);
+    }
+    catch (NL::Exception &e)
+    {
+        isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>(e.what()).ToLocalChecked()));
+        return;
+    }
+
+    if (buffer_read > -1 && buffer_read <= (int)buffer_size) // range check
+    {
+        std::string read(buffer, buffer_read);
         // args.GetReturnValue().Set(Nan::New<v8::String>(read.c_str()).ToLocalChecked());
         args.GetReturnValue().Set(Nan::CopyBuffer(read.c_str(), read.length()).ToLocalChecked());
     }
@@ -206,12 +476,99 @@ void NetLinkWrapper::Read(const v8::FunctionCallbackInfo<v8::Value> &args)
     delete[] buffer;
 }
 
-void NetLinkWrapper::Write(const v8::FunctionCallbackInfo<v8::Value> &args)
+void NetLinkWrapper::read_from(const v8::FunctionCallbackInfo<v8::Value> &args)
 {
+    auto socket = ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder())->socket;
     auto isolate = v8::Isolate::GetCurrent();
-    v8::HandleScope scope(isolate);
 
-    NetLinkWrapper *obj = ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
+    size_t buffer_size = socket->nextReadSize();
+    if (args.Length() > 0)
+    {
+        auto arg = args[0];
+        if (!arg->IsNumber())
+        {
+            isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>("'readFrom' first argument must be a number representing how many bytes to try to read").ToLocalChecked()));
+            return;
+        }
+        auto as_number = arg->NumberValue(isolate->GetCurrentContext()).FromJust();
+        buffer_size = static_cast<int>(as_number);
+    }
+
+    char *buffer = new char[buffer_size];
+    int buffer_read = 0;
+    std::string host_from;
+    unsigned int port_from;
+    try
+    {
+        buffer_read = socket->readFrom(buffer, buffer_size, &host_from, &port_from);
+    }
+    catch (NL::Exception &e)
+    {
+        isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>(e.what()).ToLocalChecked()));
+        return;
+    }
+    std::string read(buffer, buffer_read);
+    delete[] buffer;
+
+    if (buffer_read > -1 && buffer_read <= (int)buffer_size) // range check
+    {
+        // args.GetReturnValue().Set(Nan::New<v8::String>(read.c_str()).ToLocalChecked());
+        auto return_object = Nan::New<v8::Object>();
+
+        auto host_key = Nan::New("host").ToLocalChecked();
+        auto host_value = Nan::New(host_from).ToLocalChecked();
+        Nan::Set(return_object, host_key, host_value);
+
+        auto port_key = Nan::New("port").ToLocalChecked();
+        auto port_value = Nan::New(port_from);
+        Nan::Set(return_object, host_key, host_value);
+
+        auto data_key = Nan::New("data").ToLocalChecked();
+        auto data_value = Nan::CopyBuffer(read.c_str(), read.length()).ToLocalChecked();
+        Nan::Set(return_object, data_key, data_value);
+
+        args.GetReturnValue().Set(return_object);
+    }
+    // else it did not read any data, so this will return undefined
+}
+
+void NetLinkWrapper::set_blocking(const v8::FunctionCallbackInfo<v8::Value> &args)
+{
+    auto socket = ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder())->socket;
+    auto isolate = v8::Isolate::GetCurrent();
+
+    if (args.Length() > 0)
+    {
+        auto arg = args[0];
+        if (!arg->IsBoolean())
+        {
+            isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>("first arg to 'setBlocking' when passed must be boolean to set blocking to").ToLocalChecked()));
+            return;
+        }
+
+        bool blocking = arg->ToBoolean(isolate)->Value();
+
+        try
+        {
+            socket->blocking(blocking);
+        }
+        catch (NL::Exception &e)
+        {
+            isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>(e.what()).ToLocalChecked()));
+            return;
+        }
+    }
+    else
+    {
+        isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>("invalid number of args sent to 'setBlocking'").ToLocalChecked()));
+        return;
+    }
+}
+
+void NetLinkWrapper::write(const v8::FunctionCallbackInfo<v8::Value> &args)
+{
+    auto socket = ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder())->socket;
+    auto isolate = v8::Isolate::GetCurrent();
 
     bool valid = args.Length() > 0;
     std::string writing;
@@ -241,7 +598,7 @@ void NetLinkWrapper::Write(const v8::FunctionCallbackInfo<v8::Value> &args)
 
     try
     {
-        obj->socket->send(writing.c_str(), writing.length());
+        socket->send(writing.c_str(), writing.length());
     }
     catch (NL::Exception &e)
     {
@@ -250,16 +607,55 @@ void NetLinkWrapper::Write(const v8::FunctionCallbackInfo<v8::Value> &args)
     }
 }
 
-void NetLinkWrapper::Disconnect(const v8::FunctionCallbackInfo<v8::Value> &args)
+void NetLinkWrapper::write_to(const v8::FunctionCallbackInfo<v8::Value> &args)
 {
+    auto socket = ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder())->socket;
     auto isolate = v8::Isolate::GetCurrent();
-    v8::HandleScope scope(isolate);
 
-    NetLinkWrapper *obj = ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
+    std::string writing;
+    std::string host;
+    unsigned int port;
+    // shape: writeTo(host: string, port: number, data: string | UInt8Array | Buffer)
+    if (args.Length() >= 3)
+    {
+        auto arg_host = args[0];
+        if (!arg_host->IsString())
+        {
+            isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>("'sendTo' first argument must be a host string to send to").ToLocalChecked()));
+            return;
+        }
+        Nan::Utf8String host_utf8_string(arg_host);
+        host = std::string(*host_utf8_string);
+
+        auto arg_port = args[1];
+        if (!arg_host->IsNumber())
+        {
+            isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>("'sendTo' second argument must be a port number to send to").ToLocalChecked()));
+            return;
+        }
+        auto as_number = arg_port->NumberValue(isolate->GetCurrentContext()).FromJust();
+        port = static_cast<int>(as_number);
+
+        auto arg_data = args[2];
+        if (arg_data->IsString() || arg_data->IsUint8Array())
+        {
+            Nan::Utf8String param1(arg_data);
+            writing = std::string(*param1);
+        }
+        else if (node::Buffer::HasInstance(arg_data))
+        {
+            writing = std::string(node::Buffer::Data(arg_data), node::Buffer::Length(arg_data));
+        }
+        else
+        {
+            isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>("'sendTo' third argument must be a data to send to").ToLocalChecked()));
+            return;
+        }
+    }
 
     try
     {
-        obj->socket->disconnect();
+        socket->send(writing.c_str(), writing.length());
     }
     catch (NL::Exception &e)
     {

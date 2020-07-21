@@ -7,10 +7,8 @@ if (!testString) {
     throw new Error("testString not set from env!");
 }
 
-const netLink = new netLinkSocket();
-
-netLink.connect(port);
-netLink.blocking(true);
+const netLink = new netLinkSocket("127.0.0.1", port);
+netLink.setBlocking(true);
 
 netLink.write(testString);
 const echoed = netLink.read(1024);
