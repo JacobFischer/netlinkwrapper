@@ -33,7 +33,6 @@ void NetLinkWrapper::init(v8::Local<v8::Object> exports)
     // Prototype
     NODE_SET_PROTOTYPE_METHOD(class_socket_base, "accept", accept);
     NODE_SET_PROTOTYPE_METHOD(class_socket_base, "disconnect", disconnect);
-    NODE_SET_PROTOTYPE_METHOD(class_socket_base, "getBlocking", get_blocking);
     NODE_SET_PROTOTYPE_METHOD(class_socket_base, "getHostFrom", get_host_from);
     NODE_SET_PROTOTYPE_METHOD(class_socket_base, "getHostTo", get_host_to);
     NODE_SET_PROTOTYPE_METHOD(class_socket_base, "getListenQueue", get_listen_queue);
@@ -43,6 +42,8 @@ void NetLinkWrapper::init(v8::Local<v8::Object> exports)
     NODE_SET_PROTOTYPE_METHOD(class_socket_base, "getSocketHandler", get_socket_handler);
     NODE_SET_PROTOTYPE_METHOD(class_socket_base, "isBlocking", is_blocking);
     NODE_SET_PROTOTYPE_METHOD(class_socket_base, "isClient", is_client);
+    NODE_SET_PROTOTYPE_METHOD(class_socket_base, "isIPv4", is_ipv4);
+    NODE_SET_PROTOTYPE_METHOD(class_socket_base, "isIPv6", is_ipv6);
     NODE_SET_PROTOTYPE_METHOD(class_socket_base, "isServer", is_server);
     NODE_SET_PROTOTYPE_METHOD(class_socket_base, "isTCP", is_tcp);
     NODE_SET_PROTOTYPE_METHOD(class_socket_base, "isUDP", is_udp);
@@ -168,23 +169,6 @@ void NetLinkWrapper::disconnect(const v8::FunctionCallbackInfo<v8::Value> &args)
     }
 }
 
-void NetLinkWrapper::get_blocking(const v8::FunctionCallbackInfo<v8::Value> &args)
-{
-    auto obj = ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
-    auto isolate = v8::Isolate::GetCurrent();
-
-    try
-    {
-        auto val = obj->socket->blocking();
-        args.GetReturnValue().Set(Nan::New(val));
-    }
-    catch (NL::Exception &e)
-    {
-        isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>(e.what()).ToLocalChecked()));
-        return;
-    }
-}
-
 void NetLinkWrapper::get_host_from(const v8::FunctionCallbackInfo<v8::Value> &args)
 {
     auto obj = ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
@@ -193,8 +177,7 @@ void NetLinkWrapper::get_host_from(const v8::FunctionCallbackInfo<v8::Value> &ar
     try
     {
         auto hostFrom = obj->socket->hostFrom();
-        auto v8maybeString = v8::String::NewFromUtf8(isolate, hostFrom.c_str());
-        args.GetReturnValue().Set(v8maybeString.ToLocalChecked());
+        args.GetReturnValue().Set(Nan::New<v8::String>(hostFrom).ToLocalChecked());
     }
     catch (NL::Exception &e)
     {
@@ -207,13 +190,11 @@ void NetLinkWrapper::get_host_to(const v8::FunctionCallbackInfo<v8::Value> &args
 {
     auto obj = ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
     auto isolate = v8::Isolate::GetCurrent();
-    v8::HandleScope scope(isolate);
 
     try
     {
-        auto hostTo = obj->socket->hostTo();
-        auto v8maybeString = v8::String::NewFromUtf8(isolate, hostTo.c_str());
-        args.GetReturnValue().Set(v8maybeString.ToLocalChecked());
+        auto host_to = obj->socket->hostTo();
+        args.GetReturnValue().Set(Nan::New<v8::String>(host_to).ToLocalChecked());
     }
     catch (NL::Exception &e)
     {
@@ -226,13 +207,12 @@ void NetLinkWrapper::get_listen_queue(const v8::FunctionCallbackInfo<v8::Value> 
 {
     auto obj = ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
     auto isolate = v8::Isolate::GetCurrent();
-    v8::HandleScope scope(isolate);
 
     try
     {
         auto val = obj->socket->listenQueue();
         auto v8_number = v8::Number::New(isolate, val);
-        args.GetReturnValue().Set(val);
+        args.GetReturnValue().Set(v8_number);
     }
     catch (NL::Exception &e)
     {
@@ -245,7 +225,6 @@ void NetLinkWrapper::get_next_read_size(const v8::FunctionCallbackInfo<v8::Value
 {
     auto obj = ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
     auto isolate = v8::Isolate::GetCurrent();
-    v8::HandleScope scope(isolate);
 
     try
     {
@@ -264,7 +243,6 @@ void NetLinkWrapper::get_port_from(const v8::FunctionCallbackInfo<v8::Value> &ar
 {
     auto obj = ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
     auto isolate = v8::Isolate::GetCurrent();
-    v8::HandleScope scope(isolate);
 
     try
     {
@@ -283,7 +261,6 @@ void NetLinkWrapper::get_port_to(const v8::FunctionCallbackInfo<v8::Value> &args
 {
     auto obj = ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
     auto isolate = v8::Isolate::GetCurrent();
-    v8::HandleScope scope(isolate);
 
     try
     {
@@ -535,7 +512,7 @@ void NetLinkWrapper::read_from(const v8::FunctionCallbackInfo<v8::Value> &args)
 
         auto port_key = Nan::New("port").ToLocalChecked();
         auto port_value = Nan::New(port_from);
-        Nan::Set(return_object, host_key, host_value);
+        Nan::Set(return_object, port_key, port_value);
 
         auto data_key = Nan::New("data").ToLocalChecked();
         auto data_value = Nan::CopyBuffer(read.c_str(), read.length()).ToLocalChecked();

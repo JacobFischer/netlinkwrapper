@@ -25,7 +25,6 @@ private:
 
     static void accept(const v8::FunctionCallbackInfo<v8::Value> &args);
     static void disconnect(const v8::FunctionCallbackInfo<v8::Value> &args);
-    static void get_blocking(const v8::FunctionCallbackInfo<v8::Value> &args);
     static void get_host_from(const v8::FunctionCallbackInfo<v8::Value> &args);
     static void get_host_to(const v8::FunctionCallbackInfo<v8::Value> &args);
     static void get_listen_queue(const v8::FunctionCallbackInfo<v8::Value> &args);
