@@ -16,6 +16,11 @@ private:
     explicit NetLinkWrapper(NL::Socket *socket);
     ~NetLinkWrapper();
 
+    static v8::Persistent<v8::Function> constructor;
+    static v8::Local<v8::FunctionTemplate> class_socket_base;
+    static v8::Local<v8::FunctionTemplate> class_socket_client_tcp;
+
+    static void new_base(const v8::FunctionCallbackInfo<v8::Value> &args);
     static void new_client_tcp(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void accept(const v8::FunctionCallbackInfo<v8::Value> &args);
@@ -40,8 +45,6 @@ private:
     static void set_blocking(const v8::FunctionCallbackInfo<v8::Value> &args);
     static void write(const v8::FunctionCallbackInfo<v8::Value> &args);
     static void write_to(const v8::FunctionCallbackInfo<v8::Value> &args);
-
-    static v8::Persistent<v8::Function> constructor;
 };
 
 #endif

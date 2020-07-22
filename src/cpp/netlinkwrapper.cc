@@ -3,6 +3,8 @@
 #include "netlink/exception.h"
 
 v8::Persistent<v8::Function> NetLinkWrapper::constructor;
+v8::Local<v8::FunctionTemplate> NetLinkWrapper::class_socket_base;
+v8::Local<v8::FunctionTemplate> NetLinkWrapper::class_socket_client_tcp;
 
 NetLinkWrapper::NetLinkWrapper(NL::Socket *socket)
 {
@@ -23,35 +25,47 @@ void NetLinkWrapper::init(v8::Local<v8::Object> exports)
 
     // https://stackoverflow.com/questions/28076382/v8-inherited-functiontemplate-not-getting-updates-to-the-parent-functiontemplate
 
-    // Prepare constructor template
-    v8::Local<v8::FunctionTemplate> tpl = v8::FunctionTemplate::New(isolate, new_client_tcp);
-    tpl->SetClassName(Nan::New<v8::String>("NetLinkWrapper").ToLocalChecked());
-    tpl->InstanceTemplate()->SetInternalFieldCount(1);
+    auto name_class_socket_base = Nan::New("NetLinkSocketBase").ToLocalChecked();
+    class_socket_base = v8::FunctionTemplate::New(isolate, new_base);
+    class_socket_base->SetClassName(name_class_socket_base);
+    class_socket_base->InstanceTemplate()->SetInternalFieldCount(1);
 
     // Prototype
-    NODE_SET_PROTOTYPE_METHOD(tpl, "accept", accept);
-    NODE_SET_PROTOTYPE_METHOD(tpl, "disconnect", disconnect);
-    NODE_SET_PROTOTYPE_METHOD(tpl, "getBlocking", get_blocking);
-    NODE_SET_PROTOTYPE_METHOD(tpl, "getHostFrom", get_host_from);
-    NODE_SET_PROTOTYPE_METHOD(tpl, "getHostTo", get_host_to);
-    NODE_SET_PROTOTYPE_METHOD(tpl, "getListenQueue", get_listen_queue);
-    NODE_SET_PROTOTYPE_METHOD(tpl, "getNextReadSize", get_next_read_size);
-    NODE_SET_PROTOTYPE_METHOD(tpl, "getPortFrom", get_port_from);
-    NODE_SET_PROTOTYPE_METHOD(tpl, "getPortTo", get_port_to);
-    NODE_SET_PROTOTYPE_METHOD(tpl, "getSocketHandler", get_socket_handler);
-    NODE_SET_PROTOTYPE_METHOD(tpl, "isBlocking", is_blocking);
-    NODE_SET_PROTOTYPE_METHOD(tpl, "isClient", is_client);
-    NODE_SET_PROTOTYPE_METHOD(tpl, "isServer", is_server);
-    NODE_SET_PROTOTYPE_METHOD(tpl, "isTCP", is_tcp);
-    NODE_SET_PROTOTYPE_METHOD(tpl, "isUDP", is_udp);
-    NODE_SET_PROTOTYPE_METHOD(tpl, "read", read);
-    NODE_SET_PROTOTYPE_METHOD(tpl, "readFrom", read_from);
-    NODE_SET_PROTOTYPE_METHOD(tpl, "setBlocking", set_blocking);
-    NODE_SET_PROTOTYPE_METHOD(tpl, "write", write);
-    NODE_SET_PROTOTYPE_METHOD(tpl, "writeTo", write_to);
+    NODE_SET_PROTOTYPE_METHOD(class_socket_base, "accept", accept);
+    NODE_SET_PROTOTYPE_METHOD(class_socket_base, "disconnect", disconnect);
+    NODE_SET_PROTOTYPE_METHOD(class_socket_base, "getBlocking", get_blocking);
+    NODE_SET_PROTOTYPE_METHOD(class_socket_base, "getHostFrom", get_host_from);
+    NODE_SET_PROTOTYPE_METHOD(class_socket_base, "getHostTo", get_host_to);
+    NODE_SET_PROTOTYPE_METHOD(class_socket_base, "getListenQueue", get_listen_queue);
+    NODE_SET_PROTOTYPE_METHOD(class_socket_base, "getNextReadSize", get_next_read_size);
+    NODE_SET_PROTOTYPE_METHOD(class_socket_base, "getPortFrom", get_port_from);
+    NODE_SET_PROTOTYPE_METHOD(class_socket_base, "getPortTo", get_port_to);
+    NODE_SET_PROTOTYPE_METHOD(class_socket_base, "getSocketHandler", get_socket_handler);
+    NODE_SET_PROTOTYPE_METHOD(class_socket_base, "isBlocking", is_blocking);
+    NODE_SET_PROTOTYPE_METHOD(class_socket_base, "isClient", is_client);
+    NODE_SET_PROTOTYPE_METHOD(class_socket_base, "isServer", is_server);
+    NODE_SET_PROTOTYPE_METHOD(class_socket_base, "isTCP", is_tcp);
+    NODE_SET_PROTOTYPE_METHOD(class_socket_base, "isUDP", is_udp);
+    NODE_SET_PROTOTYPE_METHOD(class_socket_base, "read", read);
+    NODE_SET_PROTOTYPE_METHOD(class_socket_base, "readFrom", read_from);
+    NODE_SET_PROTOTYPE_METHOD(class_socket_base, "setBlocking", set_blocking);
+    NODE_SET_PROTOTYPE_METHOD(class_socket_base, "write", write);
+    NODE_SET_PROTOTYPE_METHOD(class_socket_base, "writeTo", write_to);
 
-    constructor.Reset(isolate, Nan::GetFunction(tpl).ToLocalChecked());
-    Nan::Set(exports, Nan::New<v8::String>("NetLinkWrapper").ToLocalChecked(), Nan::GetFunction(tpl).ToLocalChecked());
+    auto name_class_socket_client_tcp = Nan::New("NetLinkSocketClientTCP").ToLocalChecked();
+    class_socket_client_tcp = v8::FunctionTemplate::New(isolate, new_client_tcp);
+    class_socket_client_tcp->SetClassName(name_class_socket_client_tcp);
+    class_socket_client_tcp->InstanceTemplate()->SetInternalFieldCount(1);
+    class_socket_client_tcp->Inherit(class_socket_base);
+
+    Nan::Set(exports, name_class_socket_base, Nan::GetFunction(class_socket_base).ToLocalChecked());
+    Nan::Set(exports, name_class_socket_client_tcp, Nan::GetFunction(class_socket_client_tcp).ToLocalChecked());
+}
+
+void NetLinkWrapper::new_base(const v8::FunctionCallbackInfo<v8::Value> &args)
+{
+    auto isolate = v8::Isolate::GetCurrent();
+    isolate->ThrowException(v8::Exception::TypeError(Nan::New("NetLinkSocketBase should not be directly constructed").ToLocalChecked()));
 }
 
 void NetLinkWrapper::new_client_tcp(const v8::FunctionCallbackInfo<v8::Value> &args)

@@ -2,7 +2,7 @@
  * A simple synchronous TCP module wrapping the netlink library for simple
  * IO.
  */
-export declare class NetLinkWrapper {
+export declare class NetLinkSocketBaseClass {
     /**
      * A synchronous version of net.Socket.connect(port[, host]).
      * Note: it does not accept a connectListener as part of the argument.
@@ -52,10 +52,12 @@ export declare class NetLinkWrapper {
 }
 
 import bindings from "bindings";
-// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-const mod: { NetLinkWrapper: typeof NetLinkWrapper } = bindings(
-    "netlinksocket",
-);
 
-export const netLinkWrapper = mod.NetLinkWrapper;
-export default netLinkWrapper;
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+const mod: {
+    NetLinkSocketBase: typeof NetLinkSocketBaseClass;
+    NetLinkSocketClientTCP: typeof NetLinkSocketBaseClass;
+} = bindings("netlinksocket");
+
+export const NetLinkSocketBase = mod.NetLinkSocketBase;
+export const NetLinkSocketClientTCP = mod.NetLinkSocketClientTCP;

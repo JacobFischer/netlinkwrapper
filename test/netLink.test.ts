@@ -1,5 +1,5 @@
 import { Socket } from "net";
-import { netLinkWrapper } from "../src";
+import { NetLinkSocketBase, NetLinkSocketClientTCP } from "../src";
 import { EchoServer, port } from "./echo-server";
 import { expect } from "chai";
 import { fork } from "child_process";
@@ -30,7 +30,7 @@ describe("netLinkWrapper", function () {
         const preConnectionCount = await server.countConnections();
         expect(preConnectionCount).to.equal(0);
 
-        const netLink = new netLinkWrapper(localhost, port);
+        const netLink = new NetLinkSocketClientTCP(localhost, port);
         const listener = await connectionPromise;
         expect(listener).to.be.instanceOf(Socket);
 
@@ -49,7 +49,7 @@ describe("netLinkWrapper", function () {
         const dataPromise = server.events.sentData.once();
         const listenerPromise = server.events.newConnection.once();
 
-        const netLink = new netLinkWrapper(localhost, port);
+        const netLink = new NetLinkSocketClientTCP(localhost, port);
         const listener = await listenerPromise;
 
         const sending = "Make it so number one.";
@@ -66,8 +66,14 @@ describe("netLinkWrapper", function () {
         await server.events.closedConnection.once();
     });
 
+    it("inherits from the base", function () {
+        const netLink = new NetLinkSocketClientTCP(localhost, port);
+        expect(netLink).instanceOf(NetLinkSocketBase);
+        netLink.disconnect();
+    });
+
     it("can get blocking state", function () {
-        const netLink = new netLinkWrapper(localhost, port);
+        const netLink = new NetLinkSocketClientTCP(localhost, port);
         netLink.setBlocking(true);
         expect(netLink.getBlocking()).to.be.true;
         netLink.setBlocking(false);
@@ -76,7 +82,7 @@ describe("netLinkWrapper", function () {
     });
 
     it("can do non blocking reads", async function () {
-        const netLink = new netLinkWrapper(localhost, port);
+        const netLink = new NetLinkSocketClientTCP(localhost, port);
         netLink.setBlocking(false);
 
         const read = netLink.read(1024);

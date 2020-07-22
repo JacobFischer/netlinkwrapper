@@ -1,21 +1,15 @@
-import defaultExport, { netLinkWrapper } from "../src";
+import { NetLinkSocketBase, NetLinkSocketClientTCP } from "../src";
 import { expect } from "chai";
 
 describe("module", function () {
-    it("named export 'netLinkWrapper' exists", function () {
-        expect(netLinkWrapper).to.exist;
-    });
-
-    it("default export exists", function () {
-        expect(defaultExport).to.exist;
-    });
-
-    it("named export and default export are the same", function () {
-        expect(netLinkWrapper).to.equal(defaultExport);
+    it("named exports to exists", function () {
+        expect(NetLinkSocketBase).to.exist;
+        expect(NetLinkSocketClientTCP).to.exist;
     });
 
     it("exports a function", function () {
-        expect(typeof netLinkWrapper).to.equal("function");
+        expect(typeof NetLinkSocketBase).to.equal("function");
+        expect(typeof NetLinkSocketClientTCP).to.equal("function");
     });
 
     describe("prototype shape", function () {
@@ -27,7 +21,7 @@ describe("module", function () {
             "write",
         ]) {
             it(`${functionName}() exists`, function () {
-                const proto = (netLinkWrapper.prototype as unknown) as Record<
+                const proto = (NetLinkSocketBase.prototype as unknown) as Record<
                     string,
                     unknown
                 >;
