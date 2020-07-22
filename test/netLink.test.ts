@@ -75,9 +75,9 @@ describe("netLinkWrapper", function () {
     it("can get blocking state", function () {
         const netLink = new NetLinkSocketClientTCP(localhost, port);
         netLink.setBlocking(true);
-        expect(netLink.getBlocking()).to.be.true;
+        expect(netLink.isBlocking()).to.be.true;
         netLink.setBlocking(false);
-        expect(netLink.getBlocking()).to.be.false;
+        expect(netLink.isBlocking()).to.be.false;
         netLink.disconnect();
     });
 

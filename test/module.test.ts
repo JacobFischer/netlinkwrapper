@@ -15,7 +15,7 @@ describe("module", function () {
     describe("prototype shape", function () {
         for (const functionName of [
             "disconnect",
-            "getBlocking",
+            "isBlocking",
             "read",
             "setBlocking",
             "write",
