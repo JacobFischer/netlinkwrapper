@@ -1,8 +1,6 @@
 import { createServer, Server, Socket } from "net";
 import { Event, events } from "ts-typed-events";
 
-export const port = 40820;
-
 /**
  * A simple Echo Server for testing.
  * Basically async/await syntax for clearer testing code.
@@ -42,7 +40,7 @@ export class EchoServer {
         });
     }
 
-    public listen(): Promise<void> {
+    public listen(port: number): Promise<void> {
         return new Promise((resolve) => this.server.listen(port, resolve));
     }
 

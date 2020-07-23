@@ -1,13 +1,12 @@
-import { port } from "./echo-server";
 import { NetLinkSocketClientTCP } from "../lib";
 
-const { testString } = process.env;
+const { testString, testPort } = process.env;
 
-if (!testString) {
-    throw new Error("testString not set from env!");
+if (!testString || !testPort) {
+    throw new Error("env not set properly for test worker!");
 }
 
-const netLink = new NetLinkSocketClientTCP("127.0.0.1", port);
+const netLink = new NetLinkSocketClientTCP("127.0.0.1", Number(testPort));
 netLink.setBlocking(true);
 
 netLink.write(testString);

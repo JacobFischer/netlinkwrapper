@@ -1,6 +1,6 @@
 /// <reference types="node" />
 
-export declare class NetLinkSocketBase<
+export declare abstract class NetLinkSocketBase<
     TProtocal extends "TCP" | "UDP",
     TType extends "server" | "client"
 > {

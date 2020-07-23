@@ -1,28 +1,20 @@
 import { Socket } from "net";
 import { NetLinkSocketBase, NetLinkSocketClientTCP } from "../lib";
-import { EchoServer, port } from "./echo-server";
+import { EchoServer } from "./echo-server";
 import { expect } from "chai";
 import { fork } from "child_process";
 import { join, resolve } from "path";
 
-// const delay = (t: number) => new Promise((resolve) => setTimeout(resolve, t));
 const localhost = "127.0.0.1";
+const port = 27910;
 
-describe("base Sockets", function () {
+describe("TCP Client", function () {
     const server = new EchoServer();
     before(async function () {
-        return await server.listen();
+        return await server.listen(port);
     });
     after(async function () {
         await server.close();
-        // HACK: here's the deal, mocha will tear down test workers before v8
-        // cleans up the sockets we are testing with
-        // If this happens on Mac/Linux system you will see segfaults **just** in
-        // tests. If it happens in Windows you can see that, and the port will
-        // remain blocked untill you kill processes or reboot your computer.
-        // Not condusive to testing.
-        // A 1 second delay solves all this magically :P
-        // await delay(1000);
     });
 
     it("can connect and disconnect", async function () {
@@ -72,15 +64,6 @@ describe("base Sockets", function () {
         netLink.disconnect();
     });
 
-    it("can get blocking state", function () {
-        const netLink = new NetLinkSocketClientTCP(localhost, port);
-        netLink.setBlocking(true);
-        expect(netLink.isBlocking()).to.be.true;
-        netLink.setBlocking(false);
-        expect(netLink.isBlocking()).to.be.false;
-        netLink.disconnect();
-    });
-
     it("can do non blocking reads", async function () {
         const netLink = new NetLinkSocketClientTCP(localhost, port);
         netLink.setBlocking(false);
@@ -98,11 +81,12 @@ describe("base Sockets", function () {
         const newConnectionPromise = server.events.newConnection.once();
         const sentDataPromise = server.events.sentData.once();
         // unlike other tests, the netlink tests are all in the worker code
-        const workerPath = resolve(
-            join(__dirname, "./blocking-test-worker.ts"),
-        );
+        const workerPath = resolve(join(__dirname, "./tcp-client.worker.ts"));
         const worker = fork(workerPath, [], {
-            env: { testString },
+            env: {
+                testPort: String(port),
+                testString,
+            },
             execArgv: ["-r", "ts-node/register"],
         });
 
