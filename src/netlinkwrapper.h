@@ -19,9 +19,11 @@ private:
     static v8::Persistent<v8::Function> constructor;
     static v8::Local<v8::FunctionTemplate> class_socket_base;
     static v8::Local<v8::FunctionTemplate> class_socket_client_tcp;
+    static v8::Local<v8::FunctionTemplate> class_socket_client_udp;
 
     static void new_base(const v8::FunctionCallbackInfo<v8::Value> &args);
     static void new_client_tcp(const v8::FunctionCallbackInfo<v8::Value> &args);
+    static void new_client_udp(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void accept(const v8::FunctionCallbackInfo<v8::Value> &args);
     static void disconnect(const v8::FunctionCallbackInfo<v8::Value> &args);

@@ -58,7 +58,7 @@ export declare class NetLinkSocketClientUDP extends NetLinkSocketClient<
     constructor(
         hostTo: string,
         portTo: number,
-        portFrom: number,
+        portFrom?: number,
         ipVersion?: "IPv4" | "IPv6",
     );
 
@@ -77,19 +77,15 @@ declare class NetLinkSocketServer<
         ipVersion?: "IPv4" | "IPv6",
         listenQueue?: number | undefined,
     );
-
-    accept(): NetLinkSocketClient<TProtocal>;
-    getListenQueue(): number;
 }
 
 export declare class NetLinkSocketServerTCP extends NetLinkSocketServer<
     "TCP"
 > {
     accept(): NetLinkSocketClientTCP;
+    getListenQueue(): number;
 }
 
 export declare class NetLinkSocketServerUDP extends NetLinkSocketServer<
     "UDP"
-> {
-    accept(): NetLinkSocketClientUDP;
-}
+> {}
