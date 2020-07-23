@@ -52,4 +52,24 @@ describe("Base Sockets", function () {
     it("can get portTo", function () {
         expect(netLink.getPortTo()).to.equal(port);
     });
+
+    it("can get socketHandler", function () {
+        expect(typeof netLink.getSocketHandler()).to.equal("number");
+    });
+
+    it("can check isClient", function () {
+        expect(typeof netLink.isClient()).to.equal("boolean");
+    });
+
+    it("can check isServer", function () {
+        expect(typeof netLink.isServer()).to.equal("boolean");
+    });
+
+    it("can check isTCP", function () {
+        expect(typeof netLink.isTCP()).to.equal("boolean");
+    });
+
+    it("can check isUDP", function () {
+        expect(typeof netLink.isUDP()).to.equal("boolean");
+    });
 });
