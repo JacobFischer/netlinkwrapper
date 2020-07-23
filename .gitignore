@@ -70,4 +70,5 @@ temp/
 # generated output
 out/
 docs/
+test-build/
 netlinkwrapper-*.tgz

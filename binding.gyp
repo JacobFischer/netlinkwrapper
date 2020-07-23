@@ -3,13 +3,13 @@
     {
       "target_name": "netlinksocket",
       "sources": [
-        "src/cpp/netlinksocket.cc",
-        "src/cpp/netlinkwrapper.cc",
-        "src/cpp/netlink/core.cc",
-        "src/cpp/netlink/smart_buffer.cc",
-        "src/cpp/netlink/socket.cc",
-        "src/cpp/netlink/socket_group.cc",
-        "src/cpp/netlink/util.cc"
+        "src/netlinksocket.cc",
+        "src/netlinkwrapper.cc",
+        "src/netlink/core.cc",
+        "src/netlink/smart_buffer.cc",
+        "src/netlink/socket.cc",
+        "src/netlink/socket_group.cc",
+        "src/netlink/util.cc"
       ],
       "cflags": [ "-fexceptions" ],
       "cflags_cc": [ "-fexceptions" ],
@@ -29,7 +29,13 @@
       ],
       "include_dirs" : [
           "<!(node -e \"require('nan')\")"
-      ]
+      ],
+      "msvs_settings": {
+        "VCCLCompilerTool": {
+          "ExceptionHandling": "1",
+          "AdditionalOptions": ["/EHsc"]
+        }
+      }
     }
   ]
 }

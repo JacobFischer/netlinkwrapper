@@ -1,5 +1,5 @@
 import { port } from "./echo-server";
-import { NetLinkSocketClientTCP } from "../src";
+import { NetLinkSocketClientTCP } from "../lib";
 
 const { testString } = process.env;
 

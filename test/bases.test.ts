@@ -1,14 +1,14 @@
 import { Socket } from "net";
-import { NetLinkSocketBase, NetLinkSocketClientTCP } from "../src";
+import { NetLinkSocketBase, NetLinkSocketClientTCP } from "../lib";
 import { EchoServer, port } from "./echo-server";
 import { expect } from "chai";
 import { fork } from "child_process";
-import { join } from "path";
+import { join, resolve } from "path";
 
 // const delay = (t: number) => new Promise((resolve) => setTimeout(resolve, t));
 const localhost = "127.0.0.1";
 
-describe("netLinkWrapper", function () {
+describe("base Sockets", function () {
     const server = new EchoServer();
     before(async function () {
         return await server.listen();
@@ -92,13 +92,18 @@ describe("netLinkWrapper", function () {
     });
 
     it("can do blocking reads", async function () {
+        this.timeout(10_000); // slow because child process need ts-node transpiling on the fly
+
         const testString = "Hello worker thread!";
         const newConnectionPromise = server.events.newConnection.once();
         const sentDataPromise = server.events.sentData.once();
         // unlike other tests, the netlink tests are all in the worker code
-        const workerPath = join(__dirname, "./blocking-test-worker.js");
+        const workerPath = resolve(
+            join(__dirname, "./blocking-test-worker.ts"),
+        );
         const worker = fork(workerPath, [], {
             env: { testString },
+            execArgv: ["-r", "ts-node/register"],
         });
 
         await newConnectionPromise;
