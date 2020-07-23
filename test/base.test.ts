@@ -1,4 +1,3 @@
-import { Socket } from "net";
 import { NetLinkSocketBase, NetLinkSocketClientTCP } from "../lib";
 import { EchoServer } from "./echo-server";
 import { expect } from "chai";
@@ -8,31 +7,18 @@ const port = 48001;
 
 describe("Base Sockets", function () {
     const server = new EchoServer();
+    let netLink: NetLinkSocketBase = (null as unknown) as NetLinkSocketBase;
     before(async function () {
-        return await server.listen(port);
+        const connectionPromise = server.events.newConnection.once();
+        await server.listen(port);
+        netLink = new NetLinkSocketClientTCP(localhost, port);
+        await connectionPromise;
     });
     after(async function () {
-        await server.close();
-    });
-
-    it("can connect and disconnect", async function () {
-        const connectionPromise = server.events.newConnection.once();
-        const preConnectionCount = await server.countConnections();
-        expect(preConnectionCount).to.equal(0);
-
-        const netLink = new NetLinkSocketClientTCP(localhost, port);
-        const listener = await connectionPromise;
-        expect(listener).to.be.instanceOf(Socket);
-
-        // should now be the only connection
-        const postConnectionCount = await server.countConnections();
-        expect(postConnectionCount).to.equal(1);
-
         const disconnectPromise = server.events.closedConnection.once();
         netLink.disconnect();
-        const disconnected = await disconnectPromise;
-        expect(disconnected.socket).to.equal(listener);
-        expect(disconnected.hadError).to.be.false;
+        await disconnectPromise;
+        await server.close();
     });
 
     it("cannot be constructed as a base class.", function () {
@@ -43,12 +29,27 @@ describe("Base Sockets", function () {
         expect(() => new BaseClass()).to.throw();
     });
 
-    it("can get blocking state", function () {
-        const netLink = new NetLinkSocketClientTCP(localhost, port);
+    it("can get and set blocking state", function () {
         netLink.setBlocking(true);
         expect(netLink.isBlocking()).to.be.true;
         netLink.setBlocking(false);
         expect(netLink.isBlocking()).to.be.false;
-        netLink.disconnect();
+    });
+
+    it("can get hostFrom", function () {
+        const hostFrom = netLink.getHostFrom();
+        expect(typeof hostFrom).to.equal("string");
+    });
+
+    it("can get hostTo", function () {
+        expect(netLink.getHostTo()).to.equal(localhost);
+    });
+
+    it("can get portFrom", function () {
+        expect(typeof netLink.getPortFrom()).to.equal("number");
+    });
+
+    it("can get portTo", function () {
+        expect(netLink.getPortTo()).to.equal(port);
     });
 });
