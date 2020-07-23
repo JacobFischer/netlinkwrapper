@@ -8,7 +8,7 @@ process.env.ESLINT_PATH_TSCONFIG = resolve("./tsconfig.eslint.json");
 /** @type {import("eslint").Linter.Config} */
 const baseEslintConfig = {
     extends: ["jacobfischer"],
-    ignorePatterns: ["dist/**", "mocha/**"],
+    ignorePatterns: ["lib/**/*.js"],
 };
 
 module.exports = baseEslintConfig;

@@ -1,8 +1,8 @@
 /// <reference types="node" />
 
 export declare abstract class NetLinkSocketBase<
-    TProtocal extends "TCP" | "UDP",
-    TType extends "server" | "client"
+    TProtocal extends "TCP" | "UDP" | undefined = undefined,
+    TType extends "server" | "client" | undefined = undefined
 > {
     disconnect(): void;
     getHostTo(): string;
@@ -11,12 +11,28 @@ export declare abstract class NetLinkSocketBase<
     getPortFrom(): number;
     getSocketHandler(): number;
     isBlocking(): boolean;
-    isClient(): TType extends "client" ? true : false;
+    isClient(): TType extends "client"
+        ? true
+        : TType extends "server"
+        ? false
+        : boolean;
     isIPv4(): boolean;
     isIPv6(): boolean;
-    isServer(): TType extends "server" ? true : false;
-    isTCP(): TProtocal extends "TCP" ? true : false;
-    isUDP(): TProtocal extends "UDP" ? true : false;
+    isServer(): TType extends "server"
+        ? true
+        : TType extends "client"
+        ? false
+        : boolean;
+    isTCP(): TProtocal extends "TCP"
+        ? true
+        : TType extends "UDP"
+        ? false
+        : boolean;
+    isUDP(): TProtocal extends "UDP"
+        ? true
+        : TType extends "TCP"
+        ? false
+        : boolean;
     setBlocking(blocking: boolean): void;
 }
 

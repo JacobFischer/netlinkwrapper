@@ -4,9 +4,10 @@
         ".eslintrc.js",
         "test/**/*.ts",
         "test/**/*.js",
-        "test/**/.eslintrc.js"
+        "test/**/.eslintrc.js",
+        "lib/**/*.ts",
     ],
     "exclude": [
-        "mocha/*.js",
+        "lib/**/*.js",
     ],
 }
