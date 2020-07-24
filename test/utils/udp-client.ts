@@ -1,5 +1,7 @@
-// import { createSocket } from "dgram";
+import { createSocket } from "dgram";
 import { NetLinkSocketClientUDP } from "../../lib";
+
+const newUDP = () => createSocket({ type: "udp6" });
 
 /**
  * Setup helper for UDP clients.
@@ -16,17 +18,18 @@ export function setupTestingClientUDP(
     beforeEachTest: () => Promise<void>;
     afterEachTest: () => Promise<void>;
 } {
-    // const server = createSocket({ type: "udp6" });
+    let server = newUDP();
 
     const container = {
         netLink: (null as unknown) as NetLinkSocketClientUDP,
-        beforeEachTest: () => {
-            // await new Promise((resolve) => server.bind(port, resolve));
+        beforeEachTest: async () => {
+            await new Promise((resolve) => server.bind(port, resolve));
             container.netLink = new NetLinkSocketClientUDP(host, port);
         },
-        afterEachTest: () => {
+        afterEachTest: async () => {
             container.netLink.disconnect();
-            // await new Promise((resolve) => server.close(resolve));
+            await new Promise((resolve) => server.close(resolve));
+            server = newUDP(); // for the next run
         },
     };
 
