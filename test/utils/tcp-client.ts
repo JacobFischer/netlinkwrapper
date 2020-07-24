@@ -1,4 +1,4 @@
-import { EchoServerTCP } from "./tcp-echo-server";
+import { EchoServerTCP } from "./echo-server";
 import { NetLinkSocketClientTCP } from "../../lib";
 
 /**
@@ -16,13 +16,13 @@ export function setupTestingClientTCP(
     beforeEachTest: () => Promise<void>;
     afterEachTest: () => Promise<void>;
 } {
-    const server = new EchoServerTCP();
+    const server = new EchoServerTCP(port);
 
     const container = {
         netLink: (null as unknown) as NetLinkSocketClientTCP,
         beforeEachTest: async () => {
             const connectionPromise = server.events.newConnection.once();
-            await server.listen(port);
+            await server.listen();
             container.netLink = new NetLinkSocketClientTCP(host, port);
             await connectionPromise;
         },

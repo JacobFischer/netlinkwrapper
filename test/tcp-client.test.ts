@@ -1,6 +1,6 @@
 import { Socket } from "net";
 import { NetLinkSocketBase, NetLinkSocketClientTCP } from "../lib";
-import { EchoServerTCP } from "./utils/tcp-echo-server";
+import { EchoServerTCP } from "./utils/echo-server";
 import { expect } from "chai";
 import { fork } from "child_process";
 import { join, resolve } from "path";
@@ -9,9 +9,9 @@ const localhost = "127.0.0.1";
 const port = 27910;
 
 describe("TCP Client", function () {
-    const server = new EchoServerTCP();
+    const server = new EchoServerTCP(port);
     before(async function () {
-        return await server.listen(port);
+        return await server.listen();
     });
     after(async function () {
         await server.close();
@@ -33,7 +33,7 @@ describe("TCP Client", function () {
         const disconnectPromise = server.events.closedConnection.once();
         netLink.disconnect();
         const disconnected = await disconnectPromise;
-        expect(disconnected.socket).to.equal(listener);
+        expect(disconnected.from).to.equal(listener);
         expect(disconnected.hadError).to.be.false;
     });
 
@@ -49,7 +49,7 @@ describe("TCP Client", function () {
         const sent = await dataPromise;
         const sentString = sent.data.toString();
         expect(sentString).to.equal(sending); // should be echoed back
-        expect(sent.socket).to.equal(listener);
+        expect(sent.from).to.equal(listener);
 
         const read = netLink.read(1024);
         expect(read).to.be.instanceOf(Buffer);
@@ -86,6 +86,7 @@ describe("TCP Client", function () {
             env: {
                 testPort: String(port),
                 testString,
+                testType: "TCP",
             },
             execArgv: ["-r", "ts-node/register"],
         });

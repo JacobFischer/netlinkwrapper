@@ -1,6 +1,7 @@
 import { createSocket } from "dgram";
 import { NetLinkSocketClientUDP } from "../../lib";
 
+// upd6 will accept IPv4/6 conenctions so it is ideal for testing with
 const newUDP = () => createSocket({ type: "udp6" });
 
 /**

@@ -1,12 +1,15 @@
-import { NetLinkSocketClientTCP } from "../lib";
+import { NetLinkSocketClientTCP, NetLinkSocketClientUDP } from "../lib";
 
-const { testString, testPort } = process.env;
+const { testString, testPort, testType } = process.env;
 
-if (!testString || !testPort) {
+if (!testString || !testPort || !testType) {
     throw new Error("env not set properly for test worker!");
 }
 
-const netLink = new NetLinkSocketClientTCP("127.0.0.1", Number(testPort));
+const NetLinkClientSocket =
+    testType === "TCP" ? NetLinkSocketClientTCP : NetLinkSocketClientUDP;
+
+const netLink = new NetLinkClientSocket("127.0.0.1", Number(testPort));
 netLink.setBlocking(true);
 
 netLink.write(testString);
