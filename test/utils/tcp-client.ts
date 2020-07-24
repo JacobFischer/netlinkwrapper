@@ -2,8 +2,11 @@ import { EchoServerTCP } from "./tcp-echo-server";
 import { NetLinkSocketClientTCP } from "../../lib";
 
 /**
- * @param host
- * @param port
+ * Setup helper for TCP clients.
+ *
+ * @param host - The host to connect to for tests.
+ * @param port - The port to connect to for tests.
+ * @returns An instance of a TCP Client testing container.
  */
 export function setupTestingClientTCP(
     host: string,
