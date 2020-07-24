@@ -1,6 +1,6 @@
 import { createSocket, RemoteInfo, Socket } from "dgram";
 import { EchoServer } from "./echo-server";
-import { createTestingSetup } from "./setup";
+import { TestingSetupFunction } from "./setup";
 import { NetLinkSocketClientUDP } from "../../lib";
 
 // upd6 will accept IPv4/6 conenctions so it is ideal for testing with
@@ -35,16 +35,15 @@ export class EchoServerUDP extends EchoServer<RemoteInfo> {
                     from: remote,
                     hadError: false,
                 });
-                this.socket.bind(this.port, resolve);
             });
+
+            this.socket.bind(this.port, resolve);
         });
     }
 
     public close(): Promise<void> {
-        console.log("udp closing");
         return new Promise((resolve) => {
             this.socket.close(() => {
-                console.log("udp closed");
                 this.socket = newUDP(); // current socket is done, need a new one for next use
                 resolve();
             });
@@ -58,7 +57,24 @@ export class EchoServerUDP extends EchoServer<RemoteInfo> {
     }
 }
 
-export const createTestingSetupClientUDP = createTestingSetup(
-    (host, port) => new NetLinkSocketClientUDP(host, port),
-    (port) => new EchoServerUDP(port) as EchoServer,
-);
+export const createTestingSetupClientUDP: TestingSetupFunction = (
+    host,
+    port,
+) => {
+    const server = new EchoServerUDP(port) as EchoServer;
+
+    const container = {
+        netLink: (null as unknown) as NetLinkSocketClientUDP,
+        server,
+        beforeEachTest: async () => {
+            await server.listen();
+            container.netLink = new NetLinkSocketClientUDP(host, port);
+        },
+        afterEachTest: async () => {
+            container.netLink.disconnect();
+            await server.close();
+        },
+    };
+
+    return container;
+};

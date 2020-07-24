@@ -1,6 +1,6 @@
 import { createServer, Server, Socket as SocketTCP } from "net";
 import { EchoServer } from "./echo-server";
-import { createTestingSetup } from "./setup";
+import { TestingSetupFunction } from "./setup";
 import { NetLinkSocketClientTCP } from "../../lib";
 
 /**
@@ -63,7 +63,28 @@ export class EchoServerTCP extends EchoServer<SocketTCP> {
     }
 }
 
-export const createTestingSetupClientTCP = createTestingSetup(
-    (host, port) => new NetLinkSocketClientTCP(host, port),
-    (port) => new EchoServerTCP(port) as EchoServer,
-);
+export const createTestingSetupClientTCP: TestingSetupFunction = (
+    host,
+    port,
+) => {
+    const server = new EchoServerTCP(port) as EchoServer;
+
+    const container = {
+        netLink: (null as unknown) as NetLinkSocketClientTCP,
+        server,
+        beforeEachTest: async () => {
+            const connectionPromise = server.events.newConnection.once();
+            await server.listen();
+            container.netLink = new NetLinkSocketClientTCP(host, port);
+            await connectionPromise;
+        },
+        afterEachTest: async () => {
+            const disconnectPromise = server.events.closedConnection.once();
+            container.netLink.disconnect();
+            await disconnectPromise;
+            await server.close();
+        },
+    };
+
+    return container;
+};
