@@ -1,6 +1,6 @@
 import { Socket } from "net";
 import { NetLinkSocketBase, NetLinkSocketClientTCP } from "../lib";
-import { EchoServerTCP } from "./utils/echo-server";
+import { EchoServerTCP } from "./utils";
 import { expect } from "chai";
 import { fork } from "child_process";
 import { join, resolve } from "path";

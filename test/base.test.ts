@@ -1,8 +1,8 @@
 import { NetLinkSocketBase } from "../lib";
 import {
     TestingSetupFunction,
-    setupTestingClientTCP,
-    setupTestingClientUDP,
+    createTestingSetupClientTCP,
+    createTestingSetupClientUDP,
 } from "./utils";
 import { expect } from "chai";
 
@@ -17,12 +17,12 @@ type TestingBasics = {
 
 const testingSupers: Array<TestingBasics> = [
     {
-        setup: setupTestingClientTCP,
+        setup: createTestingSetupClientTCP,
         isClient: true,
         isTCP: true,
     },
     {
-        setup: setupTestingClientUDP,
+        setup: createTestingSetupClientUDP,
         isClient: true,
         isTCP: false,
     },

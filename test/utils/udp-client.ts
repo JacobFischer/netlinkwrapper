@@ -1,38 +1,64 @@
-import { createSocket } from "dgram";
+import { createSocket, RemoteInfo, Socket } from "dgram";
+import { EchoServer } from "./echo-server";
+import { createTestingSetup } from "./setup";
 import { NetLinkSocketClientUDP } from "../../lib";
 
 // upd6 will accept IPv4/6 conenctions so it is ideal for testing with
 const newUDP = () => createSocket({ type: "udp6" });
 
-/**
- * Setup helper for UDP clients.
- *
- * @param host - The host to connect to for tests.
- * @param port - The port to connect to for tests.
- * @returns An instance of a UDP Client testing container.
- */
-export function setupTestingClientUDP(
-    host: string,
-    port: number,
-): {
-    netLink: NetLinkSocketClientUDP;
-    beforeEachTest: () => Promise<void>;
-    afterEachTest: () => Promise<void>;
-} {
-    let server = newUDP();
+export class EchoServerUDP extends EchoServer<RemoteInfo> {
+    private socket: Socket;
 
-    const container = {
-        netLink: (null as unknown) as NetLinkSocketClientUDP,
-        beforeEachTest: async () => {
-            await new Promise((resolve) => server.bind(port, resolve));
-            container.netLink = new NetLinkSocketClientUDP(host, port);
-        },
-        afterEachTest: async () => {
-            container.netLink.disconnect();
-            await new Promise((resolve) => server.close(resolve));
-            server = newUDP(); // for the next run
-        },
-    };
+    constructor(port: number) {
+        super(port);
 
-    return container;
+        this.socket = newUDP();
+    }
+
+    public listen(): Promise<void> {
+        return new Promise((resolve) => {
+            this.socket = newUDP();
+
+            this.socket.on("message", (message, remote) => {
+                // UDP does not form true connections, so we will "fake" it
+                const data = message.toString();
+
+                this.events.newConnection.emit(remote);
+                this.events.sentData.emit({
+                    from: remote,
+                    data,
+                });
+                // echo it back
+                this.socket.send(data, remote.port, remote.address);
+
+                this.events.closedConnection.emit({
+                    from: remote,
+                    hadError: false,
+                });
+                this.socket.bind(this.port, resolve);
+            });
+        });
+    }
+
+    public close(): Promise<void> {
+        console.log("udp closing");
+        return new Promise((resolve) => {
+            this.socket.close(() => {
+                console.log("udp closed");
+                this.socket = newUDP(); // current socket is done, need a new one for next use
+                resolve();
+            });
+        });
+    }
+
+    public countConnections(): Promise<number> {
+        return new Promise((resolve) => {
+            resolve(0); // UDP does not have true connections
+        });
+    }
 }
+
+export const createTestingSetupClientUDP = createTestingSetup(
+    (host, port) => new NetLinkSocketClientUDP(host, port),
+    (port) => new EchoServerUDP(port) as EchoServer,
+);
