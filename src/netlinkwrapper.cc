@@ -738,7 +738,7 @@ void NetLinkWrapper::write_to(const v8::FunctionCallbackInfo<v8::Value> &args)
 
     std::string writing;
     std::string host;
-    unsigned int port;
+    unsigned int port = 0;
     // shape: writeTo(host: string, port: number, data: string | UInt8Array | Buffer)
     if (args.Length() >= 3)
     {
