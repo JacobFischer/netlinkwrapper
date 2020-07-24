@@ -1,6 +1,7 @@
 #include <nan.h>
 #include "netlinkwrapper.h"
 #include "netlink/exception.h"
+#include <iostream>
 
 v8::Persistent<v8::Function> NetLinkWrapper::constructor;
 v8::Local<v8::FunctionTemplate> NetLinkWrapper::class_socket_base;
@@ -150,6 +151,7 @@ void NetLinkWrapper::new_client_udp(const v8::FunctionCallbackInfo<v8::Value> &a
     std::string host_to;
     unsigned int port_to;
     unsigned int port_from = 0;
+    NL::IPVer ipver = NL::IPVer::IP4;
     if (args.Length() >= 2)
     {
         auto arg_host_to = args[0];
@@ -169,17 +171,6 @@ void NetLinkWrapper::new_client_udp(const v8::FunctionCallbackInfo<v8::Value> &a
         }
         auto as_number = arg_port_to->NumberValue(isolate->GetCurrentContext()).FromJust();
         port_to = static_cast<int>(as_number);
-
-        /*
-        auto arg_port_from = args[2];
-        if (!arg_port_from->IsNumber())
-        {
-            isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>("'new NetLinkSocketClientUDP' third argument must be a portFrom number").ToLocalChecked()));
-            return;
-        }
-        as_number = arg_port_from->NumberValue(isolate->GetCurrentContext()).FromJust();
-        port_from = static_cast<int>(as_number);
-        */
     }
     else
     {
@@ -187,16 +178,70 @@ void NetLinkWrapper::new_client_udp(const v8::FunctionCallbackInfo<v8::Value> &a
         return;
     }
 
+    v8::Local<v8::Value> *maybe_ip = NULL;
+    if (args.Length() >= 3)
+    {
+        auto third_arg = args[2];
+        if (third_arg->IsNumber())
+        {
+            auto as_number = third_arg->NumberValue(isolate->GetCurrentContext()).FromJust();
+            port_from = static_cast<int>(as_number);
+        }
+        else if (third_arg->IsString())
+        {
+            maybe_ip = &third_arg;
+        }
+        else if (third_arg->IsNullOrUndefined())
+        {
+            // do nothing, they don't care about the port or IP, both are optional anyways
+        }
+        else
+        {
+            isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>("'new NetLinkSocketClientUDP' third argument must be a portFrom number").ToLocalChecked()));
+            return;
+        }
+    }
+    if (args.Length() >= 4)
+    {
+        auto fourth_arg = args[3];
+        if (fourth_arg->IsNullOrUndefined())
+        {
+            if (!fourth_arg->IsString())
+            {
+                isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>("'new NetLinkSocketClientUDP' fourth argument must be a portFrom number").ToLocalChecked()));
+                return;
+            }
+            maybe_ip = &fourth_arg;
+        }
+    }
+
+    if (maybe_ip)
+    {
+        auto arg = *maybe_ip;
+        Nan::Utf8String ip_str_utf8(arg);
+        auto ip_str = std::string(*ip_str_utf8);
+        if (ip_str.compare("IPv6") == 0)
+        {
+            ipver = NL::IPVer::IP6;
+        }
+        else if (ip_str.compare("IPv4") != 0)
+        {
+            isolate->ThrowException(v8::Exception::TypeError(Nan::New("'new NetLinkSocketClientUDP' ipVersion argument must be either 'IPv4' or 'IPv6' when set.").ToLocalChecked()));
+            return;
+        }
+        // else keep the default, which is "IPv4"
+    }
+
     NL::Socket *socket;
     try
     {
         if (port_from != 0)
         {
-            socket = new NL::Socket(host_to, port_to, port_from);
+            socket = new NL::Socket(host_to, port_to, port_from, ipver);
         }
         else
         {
-            socket = new NL::Socket(host_to, port_to, NL::Protocol::UDP);
+            socket = new NL::Socket(host_to, port_to, NL::Protocol::UDP, ipver);
         }
     }
     catch (NL::Exception &e)
@@ -734,9 +779,6 @@ void NetLinkWrapper::write_to(const v8::FunctionCallbackInfo<v8::Value> &args)
 
     try
     {
-        writing = "hello from cpp";
-        host = "127.0.0.1";
-        port = 33333;
         socket->sendTo(writing.c_str(), writing.length() + 1, host, port);
     }
     catch (NL::Exception &e)

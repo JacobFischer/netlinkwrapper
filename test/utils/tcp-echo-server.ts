@@ -5,7 +5,7 @@ import { Event, events } from "ts-typed-events";
  * A simple Echo Server for testing.
  * Basically async/await syntax for clearer testing code.
  */
-export class EchoServer {
+export class EchoServerTCP {
     private readonly server: Server;
     private readonly listeners = new Set<Socket>();
 
@@ -42,6 +42,10 @@ export class EchoServer {
 
     public listen(port: number): Promise<void> {
         return new Promise((resolve) => this.server.listen(port, resolve));
+    }
+
+    public isListening(): boolean {
+        return this.server.listening;
     }
 
     public close(): Promise<void> {

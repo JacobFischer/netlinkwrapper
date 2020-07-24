@@ -1,75 +1,118 @@
-import { NetLinkSocketBase, NetLinkSocketClientTCP } from "../lib";
-import { EchoServer } from "./echo-server";
+import { NetLinkSocketBase } from "../lib";
+import {
+    TestingSetupFunction,
+    setupTestingClientTCP,
+    setupTestingClientUDP,
+} from "./utils";
 import { expect } from "chai";
 
-const localhost = "127.0.0.1";
-const port = 48001;
+const host = "127.0.0.1";
+const startingPort = 48001;
 
-describe("Base Sockets", function () {
-    const server = new EchoServer();
-    let netLink: NetLinkSocketBase = (null as unknown) as NetLinkSocketBase;
-    before(async function () {
-        const connectionPromise = server.events.newConnection.once();
-        await server.listen(port);
-        netLink = new NetLinkSocketClientTCP(localhost, port);
-        await connectionPromise;
-    });
-    after(async function () {
-        const disconnectPromise = server.events.closedConnection.once();
-        netLink.disconnect();
-        await disconnectPromise;
-        await server.close();
-    });
+type TestingBasics = {
+    setup: TestingSetupFunction;
+    isClient: boolean;
+    isTCP: boolean;
+};
 
+const testingSupers: Array<TestingBasics> = [
+    {
+        setup: setupTestingClientTCP,
+        isClient: true,
+        isTCP: true,
+    },
+    {
+        setup: setupTestingClientUDP,
+        isClient: true,
+        isTCP: false,
+    },
+];
+
+describe("base sockets", function () {
     it("cannot be constructed as a base class.", function () {
-        // eslint-disable-next-line @typescript-eslint/ban-types
-        const BaseClass = (NetLinkSocketBase as unknown) as Function & {
-            new (): void;
-        };
-        expect(() => new BaseClass()).to.throw();
+        expect(() => {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-explicit-any
+            new (NetLinkSocketBase as any)();
+        }).to.throw();
     });
 
-    it("can get and set blocking state", function () {
-        netLink.setBlocking(true);
-        expect(netLink.isBlocking()).to.be.true;
-        netLink.setBlocking(false);
-        expect(netLink.isBlocking()).to.be.false;
-    });
+    /* eslint-disable mocha/no-setup-in-describe */
+    for (let i = 0; i < testingSupers.length; i++) {
+        const { setup, isClient, isTCP } = testingSupers[i];
+        /* eslint-enable mocha/no-setup-in-describe */
+        const port = startingPort + i;
+        const testing = setup(host, port);
+        const protocal = isTCP ? "TCP" : "UDP";
+        const socketType = isClient ? "Client" : "Server";
+        const description = `${protocal} ${socketType} base functionality`;
 
-    it("can get hostFrom", function () {
-        const hostFrom = netLink.getHostFrom();
-        expect(typeof hostFrom).to.equal("string");
-    });
+        describe(description, function () {
+            beforeEach(testing.beforeEachTest);
+            afterEach(testing.afterEachTest);
 
-    it("can get hostTo", function () {
-        expect(netLink.getHostTo()).to.equal(localhost);
-    });
+            it("exists", function () {
+                expect(testing.netLink).to.exist;
+            });
 
-    it("can get portFrom", function () {
-        expect(typeof netLink.getPortFrom()).to.equal("number");
-    });
+            it("extends NetLinkSocketBase", function () {
+                expect(testing.netLink).to.be.instanceof(NetLinkSocketBase);
+            });
 
-    it("can get portTo", function () {
-        expect(netLink.getPortTo()).to.equal(port);
-    });
+            it("can get and set blocking state", function () {
+                testing.netLink.setBlocking(true);
+                expect(testing.netLink.isBlocking()).to.be.true;
+                testing.netLink.setBlocking(false);
+                expect(testing.netLink.isBlocking()).to.be.false;
+            });
 
-    it("can get socketHandler", function () {
-        expect(typeof netLink.getSocketHandler()).to.equal("number");
-    });
+            it("can get hostFrom", function () {
+                const hostFrom = testing.netLink.getHostFrom();
+                expect(typeof hostFrom).to.equal("string");
+            });
 
-    it("can check isClient", function () {
-        expect(typeof netLink.isClient()).to.equal("boolean");
-    });
+            it("can get hostTo", function () {
+                expect(testing.netLink.getHostTo()).to.equal(host);
+            });
 
-    it("can check isServer", function () {
-        expect(typeof netLink.isServer()).to.equal("boolean");
-    });
+            it("can get portFrom", function () {
+                expect(typeof testing.netLink.getPortFrom()).to.equal(
+                    "number",
+                );
+            });
 
-    it("can check isTCP", function () {
-        expect(typeof netLink.isTCP()).to.equal("boolean");
-    });
+            it("can get portTo", function () {
+                expect(testing.netLink.getPortTo()).to.equal(port);
+            });
 
-    it("can check isUDP", function () {
-        expect(typeof netLink.isUDP()).to.equal("boolean");
-    });
+            it("can get socketHandler", function () {
+                expect(typeof testing.netLink.getSocketHandler()).to.equal(
+                    "number",
+                );
+            });
+
+            it("can check isClient", function () {
+                const checked = testing.netLink.isClient();
+                expect(typeof checked).to.equal("boolean");
+                expect(checked).to.equal(isClient);
+            });
+
+            it("can check isServer", function () {
+                const checked = testing.netLink.isServer();
+                expect(typeof checked).to.equal("boolean");
+                expect(checked).to.equal(!isClient);
+            });
+
+            it("can check isTCP", function () {
+                const checked = testing.netLink.isTCP();
+                expect(typeof checked).to.equal("boolean");
+                expect(checked).to.equal(isTCP);
+            });
+
+            it("can check isUDP", function () {
+                const checked = testing.netLink.isUDP();
+                expect(typeof checked).to.equal("boolean");
+                expect(checked).to.equal(!isTCP);
+            });
+        });
+    }
 });

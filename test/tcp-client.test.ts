@@ -1,6 +1,6 @@
 import { Socket } from "net";
 import { NetLinkSocketBase, NetLinkSocketClientTCP } from "../lib";
-import { EchoServer } from "./echo-server";
+import { EchoServerTCP } from "./utils/tcp-echo-server";
 import { expect } from "chai";
 import { fork } from "child_process";
 import { join, resolve } from "path";
@@ -9,7 +9,7 @@ const localhost = "127.0.0.1";
 const port = 27910;
 
 describe("TCP Client", function () {
-    const server = new EchoServer();
+    const server = new EchoServerTCP();
     before(async function () {
         return await server.listen(port);
     });

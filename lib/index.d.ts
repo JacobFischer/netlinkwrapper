@@ -55,6 +55,7 @@ export declare class NetLinkSocketClientTCP extends NetLinkSocketClient<
 export declare class NetLinkSocketClientUDP extends NetLinkSocketClient<
     "UDP"
 > {
+    constructor(hostTo: string, portTo: number, ipVersion?: "IPv4" | "IPv6");
     constructor(
         hostTo: string,
         portTo: number,
