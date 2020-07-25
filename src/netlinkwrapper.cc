@@ -1,4 +1,7 @@
+#define NOMINMAX
+#include <limits>
 #include <nan.h>
+#include <sstream>
 #include "netlinkwrapper.h"
 #include "netlink/exception.h"
 #include <iostream>
@@ -575,7 +578,22 @@ void NetLinkWrapper::read(const v8::FunctionCallbackInfo<v8::Value> &args)
             return;
         }
         auto as_number = arg->NumberValue(isolate->GetCurrentContext()).FromJust();
-        buffer_size = static_cast<int>(as_number);
+        if (as_number <= 0)
+        {
+            std::ostringstream ss;
+            ss << "'read' buffer size must be a positive number (" << as_number << ").";
+            isolate->ThrowException(v8::Exception::TypeError(Nan::New(ss.str()).ToLocalChecked()));
+            return;
+        }
+        if (as_number >= std::numeric_limits<unsigned int>::max())
+        {
+            std::ostringstream ss;
+            ss << "'read' buffer size too large (" << as_number << ").";
+            isolate->ThrowException(v8::Exception::TypeError(Nan::New(ss.str()).ToLocalChecked()));
+            return;
+        }
+
+        buffer_size = static_cast<size_t>(as_number);
     }
     char *buffer = new char[buffer_size];
     int buffer_read = 0;
