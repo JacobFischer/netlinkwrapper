@@ -294,9 +294,22 @@ void NetLinkWrapper::disconnect(const v8::FunctionCallbackInfo<v8::Value> &args)
     auto isolate = v8::Isolate::GetCurrent();
     // v8::HandleScope scope(isolate);
 
+#ifdef OS_WIN32
+    size_t size = obj->socket->nextReadSize();
+    if (size)
+    {
+        // we need to drain the socket. Windows will hang on closing the socket
+        // if there is still data in the buffer
+        char *buffer = new char[size + 1];
+        obj->socket->read(buffer, size);
+        delete buffer;
+    }
+#endif
+
     try
     {
         obj->socket->disconnect();
+        delete obj->socket;
     }
     catch (NL::Exception &e)
     {
@@ -595,22 +608,61 @@ void NetLinkWrapper::read(const v8::FunctionCallbackInfo<v8::Value> &args)
 
         buffer_size = static_cast<size_t>(as_number);
     }
+
+    bool read_entire_buffer = false;
+    if (buffer_size <= 0)
+    {
+        if (!socket->blocking())
+        {
+            // we're not blocking and there is nothing to read, returning here
+            // will return undefined to the js function, as there was nothing
+            // to read.
+            return;
+        }
+
+        read_entire_buffer = true;
+        buffer_size = 1;
+    }
+
     char *buffer = new char[buffer_size];
     int buffer_read = 0;
     try
     {
+        // std::cout << "read size: " << buffer_size << " with " << socket->blocking() << "." << std::endl;
         buffer_read = socket->read(buffer, buffer_size);
+        // std::cout << "read: " << buffer << "." << std::endl;
+        if (read_entire_buffer)
+        {
+            auto next_buffer_size = socket->nextReadSize();
+            if (next_buffer_size > 0)
+            {
+                // std::cout << "gotta read more of size: " << next_buffer_size << "." << std::endl;
+                std::string entire_string(buffer, buffer_size);
+                delete buffer;
+                buffer_size = next_buffer_size;
+                buffer = new char[buffer_size];
+                buffer_read = socket->read(buffer, buffer_size);
+                std::string remaining_string(buffer, buffer_read);
+                delete buffer;
+                entire_string += remaining_string;
+                buffer_size = entire_string.length();
+                buffer_read = buffer_size;
+                buffer = new char[buffer_size];
+                strcpy(buffer, entire_string.c_str());
+                // std::cout << "read the whole dang thing: " << buffer << "." << std::endl;
+            }
+        }
     }
     catch (NL::Exception &e)
     {
-        isolate->ThrowException(v8::Exception::Error(Nan::New<v8::String>(e.what()).ToLocalChecked()));
+        delete[] buffer;
+        isolate->ThrowException(v8::Exception::Error(Nan::New<v8::String>(std::string("lol wut: ") + e.what()).ToLocalChecked()));
         return;
     }
 
     if (buffer_read > -1 && buffer_read <= (int)buffer_size) // range check
     {
         std::string read(buffer, buffer_read);
-        // args.GetReturnValue().Set(Nan::New<v8::String>(read.c_str()).ToLocalChecked());
         args.GetReturnValue().Set(Nan::CopyBuffer(read.c_str(), read.length()).ToLocalChecked());
     }
     // else it did not read any data, so this will return undefined

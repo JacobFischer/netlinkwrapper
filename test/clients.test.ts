@@ -66,6 +66,17 @@ describe("clients shared functionality", function () {
                 expect(read).to.be.undefined;
             });
 
+            it("can get next read size", async function () {
+                expect(testing.netLink.getNextReadSize()).to.equal(0);
+                const dataPromise = testing.server.events.sentData.once();
+                const sending = "over three months";
+                testing.netLink.write(sending);
+                const serverSent = await dataPromise;
+                expect(testing.netLink.getNextReadSize()).to.equal(
+                    serverSent.data.length,
+                );
+            });
+
             it("can do blocking reads", async function () {
                 this.timeout(10_000); // slow because child process need ts-node transpiling on the fly
 
