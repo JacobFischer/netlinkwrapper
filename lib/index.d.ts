@@ -43,7 +43,7 @@ declare class NetLinkSocketClient<
 > extends NetLinkSocketBase<TProtocal, "client"> {
     constructor(hostTo: string, portTo: number, ipVersion?: "IPv4" | "IPv6");
 
-    read(numBytes?: number): Buffer | undefined;
+    read(): Buffer | undefined;
     write(data: string | Uint8Array | Buffer): void;
     getNextReadSize(): number;
 }
@@ -64,7 +64,7 @@ export declare class NetLinkSocketClientUDP extends NetLinkSocketClient<
     );
 
     sendTo(data: Buffer, hostTo: string, portTo: number): void;
-    readFrom(hostFrom: string, portFrom?: number, bufferSize?: number): Buffer;
+    readFrom(hostFrom: string, portFrom?: number): Buffer;
 }
 
 // -- Servers -- \\

@@ -14,7 +14,8 @@ netLink.setBlocking(true);
 
 netLink.write(testString);
 const echoed = netLink.read(); // must include buffer size, because right now getNextReadSize = 0
-const echoedString = echoed?.toString() || "";
+const echoedString = echoed?.toString() || "NOTHING";
+
 if (echoedString !== testString) {
     throw new Error(
         `Echo server failed! ("${testString}" !== "${echoedString}").`,

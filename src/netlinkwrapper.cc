@@ -1,10 +1,13 @@
 #define NOMINMAX
+#include <algorithm>
 #include <limits>
 #include <nan.h>
 #include <sstream>
 #include "netlinkwrapper.h"
 #include "netlink/exception.h"
 #include <iostream>
+
+#define READ_SIZE 255
 
 v8::Persistent<v8::Function> NetLinkWrapper::constructor;
 v8::Local<v8::FunctionTemplate> NetLinkWrapper::class_socket_base;
@@ -579,36 +582,8 @@ void NetLinkWrapper::read(const v8::FunctionCallbackInfo<v8::Value> &args)
     auto socket = ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder())->socket;
     auto isolate = v8::Isolate::GetCurrent();
 
-    size_t buffer_size = socket->nextReadSize();
-    if (args.Length() > 0)
-    {
-        auto arg = args[0];
-        if (!arg->IsNumber())
-        {
-            isolate->ThrowException(v8::Exception::TypeError(Nan::New<v8::String>("'read' first argument must be a number representing how many bytes to try to read").ToLocalChecked()));
-            return;
-        }
-        auto as_number = arg->NumberValue(isolate->GetCurrentContext()).FromJust();
-        if (as_number <= 0)
-        {
-            std::ostringstream ss;
-            ss << "'read' buffer size must be a positive number (" << as_number << ").";
-            isolate->ThrowException(v8::Exception::TypeError(Nan::New(ss.str()).ToLocalChecked()));
-            return;
-        }
-        if (as_number >= std::numeric_limits<unsigned int>::max())
-        {
-            std::ostringstream ss;
-            ss << "'read' buffer size too large (" << as_number << ").";
-            isolate->ThrowException(v8::Exception::TypeError(Nan::New(ss.str()).ToLocalChecked()));
-            return;
-        }
-
-        buffer_size = static_cast<size_t>(as_number);
-    }
-
-    bool read_entire_buffer = false;
-    if (buffer_size <= 0)
+    size_t to_read = socket->nextReadSize();
+    if (to_read <= 0)
     {
         if (!socket->blocking())
         {
@@ -618,54 +593,57 @@ void NetLinkWrapper::read(const v8::FunctionCallbackInfo<v8::Value> &args)
             return;
         }
 
-        read_entire_buffer = true;
-        buffer_size = 1;
+        to_read = READ_SIZE;
     }
 
-    char *buffer = new char[buffer_size];
-    int buffer_read = 0;
+    std::stringstream ss;
     try
     {
-        // std::cout << "read size: " << buffer_size << " with " << socket->blocking() << "." << std::endl;
-        buffer_read = socket->read(buffer, buffer_size);
-        // std::cout << "read: " << buffer << "." << std::endl;
-        if (read_entire_buffer)
+        while (to_read > 0)
         {
-            auto next_buffer_size = socket->nextReadSize();
-            if (next_buffer_size > 0)
+            bool talk = socket->protocol() == NL::Protocol::UDP && socket->blocking();
+            if (talk)
             {
-                // std::cout << "gotta read more of size: " << next_buffer_size << "." << std::endl;
-                std::string entire_string(buffer, buffer_size);
-                delete[] buffer;
-                buffer_size = next_buffer_size;
-                buffer = new char[buffer_size];
-                buffer_read = socket->read(buffer, buffer_size);
-                std::string remaining_string(buffer, buffer_read);
-                delete[] buffer;
-                entire_string += remaining_string;
-                buffer_size = entire_string.length();
-                buffer_read = buffer_size;
-                buffer = new char[buffer_size];
-                strcpy(buffer, entire_string.c_str());
-                // std::cout << "read the whole dang thing: " << buffer << "." << std::endl;
+                std::cout << "attemping to read bytes number " << to_read << std::endl;
+            }
+            char *buffer = new char[to_read];
+            auto buffer_read = socket->read(buffer, to_read);
+            if (buffer_read > 0)
+            {
+                ss << std::string(buffer, buffer_read);
+            }
+            delete[] buffer;
+            if (buffer_read < (int)to_read)
+            {
+                to_read = 0;
+                if (talk)
+                {
+                    std::cout << "what waht waht" << std::endl;
+                }
+            }
+            else
+            {
+                to_read = std::max(socket->nextReadSize(), READ_SIZE);
+            }
+
+            if (talk)
+            {
+                std::cout << "actuall read " << buffer_read << " and next will be " << to_read << std::endl;
             }
         }
     }
     catch (NL::Exception &e)
     {
-        delete[] buffer;
         isolate->ThrowException(v8::Exception::Error(Nan::New<v8::String>(std::string("lol wut: ") + e.what()).ToLocalChecked()));
         return;
     }
 
-    if (buffer_read > -1 && buffer_read <= (int)buffer_size) // range check
+    auto str = ss.str();
+    if (str.length()) // range check
     {
-        std::string read(buffer, buffer_read);
-        args.GetReturnValue().Set(Nan::CopyBuffer(read.c_str(), read.length()).ToLocalChecked());
+        args.GetReturnValue().Set(Nan::CopyBuffer(str.c_str(), str.length()).ToLocalChecked());
     }
     // else it did not read any data, so this will return undefined
-
-    delete[] buffer;
 }
 
 void NetLinkWrapper::read_from(const v8::FunctionCallbackInfo<v8::Value> &args)
