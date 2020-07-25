@@ -1,7 +1,7 @@
-import { testingAddress, testingClients } from "./utils";
+import { testingClients } from "./utils";
 import { expect } from "chai";
-// import { fork } from "child_process";
-// import { join, resolve } from "path";
+import { fork } from "child_process";
+import { join, resolve } from "path";
 
 describe("clients shared functionality", function () {
     for (const { setup, isTCP } of testingClients) {
@@ -30,13 +30,13 @@ describe("clients shared functionality", function () {
                 expect(read).to.be.undefined;
             });
 
-            /*
             it("can do blocking reads", async function () {
                 this.timeout(10_000); // slow because child process need ts-node transpiling on the fly
 
                 const testString = "Hello worker thread!";
                 const newConnectionPromise = testing.server.events.newConnection.once();
                 const sentDataPromise = testing.server.events.sentData.once();
+                const disconnectedPromise = testing.server.events.closedConnection.once();
                 // unlike other tests, the netlink tests are all in the worker code
                 const workerPath = resolve(
                     join(__dirname, "./client.worker.ts"),
@@ -56,7 +56,7 @@ describe("clients shared functionality", function () {
                 expect(sent.data).to.exist;
                 expect(sent.data && sent.data.toString()).to.equal(testString);
 
-                await testing.server.events.closedConnection.once();
+                await disconnectedPromise;
 
                 const code = await new Promise((resolve, reject) =>
                     worker.on("exit", (code) => {
@@ -73,7 +73,6 @@ describe("clients shared functionality", function () {
                 );
                 expect(code).to.equal(0);
             });
-            */
         });
     }
 });
