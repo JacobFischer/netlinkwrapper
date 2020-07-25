@@ -1,4 +1,5 @@
 import { createSocket, RemoteInfo, Socket } from "dgram";
+import { testingAddress } from "./address";
 import { EchoServer } from "./echo-server";
 import { TestingSetupFunction } from "./setup";
 import { NetLinkSocketClientUDP } from "../../lib";
@@ -60,21 +61,25 @@ export class EchoServerUDP extends EchoServer<RemoteInfo> {
 export const createTestingSetupClientUDP: TestingSetupFunction<
     NetLinkSocketClientUDP,
     EchoServerUDP
-> = (host, port) => {
+> = (suite) => {
+    const [host, port] = testingAddress(suite.fullTitle());
     const server = new EchoServerUDP(port);
 
     const container = {
         netLink: (null as unknown) as NetLinkSocketClientUDP,
         server,
-        beforeEachTest: async () => {
-            await server.listen();
-            container.netLink = new NetLinkSocketClientUDP(host, port);
-        },
-        afterEachTest: async () => {
-            container.netLink.disconnect();
-            await server.close();
-        },
+        host,
+        port,
     };
+
+    suite.beforeEach(async () => {
+        await server.listen();
+        container.netLink = new NetLinkSocketClientUDP(host, port);
+    });
+    suite.afterEach(async () => {
+        container.netLink.disconnect();
+        await server.close();
+    });
 
     return container;
 };

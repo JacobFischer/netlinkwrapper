@@ -2,9 +2,6 @@ import { NetLinkSocketBase } from "../lib";
 import { testingClients } from "./utils";
 import { expect } from "chai";
 
-const host = "127.0.0.1";
-const startingPort = 48001;
-
 describe("base sockets", function () {
     it("cannot be constructed as a base class.", function () {
         expect(() => {
@@ -13,17 +10,13 @@ describe("base sockets", function () {
         }).to.throw();
     });
 
-    for (let i = 0; i < testingClients.length; i++) {
-        const { setup, isClient, isTCP } = testingClients[i];
-        const port = startingPort + i;
-        const testing = setup(host, port);
+    for (const { setup, isClient, isTCP } of testingClients) {
         const protocal = isTCP ? "TCP" : "UDP";
         const socketType = isClient ? "Client" : "Server";
         const description = `${protocal} ${socketType} base functionality`;
 
         describe(description, function () {
-            beforeEach(testing.beforeEachTest);
-            afterEach(testing.afterEachTest);
+            const testing = setup(this);
 
             it("exists", function () {
                 expect(testing.netLink).to.exist;
@@ -46,7 +39,7 @@ describe("base sockets", function () {
             });
 
             it("can get hostTo", function () {
-                expect(testing.netLink.getHostTo()).to.equal(host);
+                expect(testing.netLink.getHostTo()).to.equal(testing.host);
             });
 
             it("can get portFrom", function () {
@@ -56,7 +49,7 @@ describe("base sockets", function () {
             });
 
             it("can get portTo", function () {
-                expect(testing.netLink.getPortTo()).to.equal(port);
+                expect(testing.netLink.getPortTo()).to.equal(testing.port);
             });
 
             it("can get socketHandler", function () {

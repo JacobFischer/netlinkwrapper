@@ -4,11 +4,11 @@ import { NetLinkSocketBase } from "../../lib";
 export type TestingSetup<T extends NetLinkSocketBase, S extends EchoServer> = {
     netLink: T;
     server: S;
-    beforeEachTest: () => Promise<void>;
-    afterEachTest: () => Promise<void>;
+    host: string;
+    port: number;
 };
 
 export type TestingSetupFunction<
     T extends NetLinkSocketBase,
     S extends EchoServer
-> = (host: string, port: number) => TestingSetup<T, S>;
+> = (suite: Mocha.Suite) => TestingSetup<T, S>;

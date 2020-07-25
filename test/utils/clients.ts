@@ -1,9 +1,9 @@
-import { createTestingSetupClientTCP } from "./setup.tcp-client";
+import { setupTestingForClientTCP } from "./setup.tcp-client";
 import { createTestingSetupClientUDP } from "./setup.udp-client";
 
 export const testingClients = [
     {
-        setup: createTestingSetupClientTCP,
+        setup: setupTestingForClientTCP,
         isClient: true,
         isTCP: true,
     },

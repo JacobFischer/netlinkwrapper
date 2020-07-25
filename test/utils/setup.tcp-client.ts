@@ -1,4 +1,5 @@
 import { createServer, Server, Socket as SocketTCP } from "net";
+import { testingAddress } from "./address";
 import { EchoServer } from "./echo-server";
 import { TestingSetupFunction } from "./setup";
 import { NetLinkSocketClientTCP } from "../../lib";
@@ -63,28 +64,33 @@ export class EchoServerTCP extends EchoServer<SocketTCP> {
     }
 }
 
-export const createTestingSetupClientTCP: TestingSetupFunction<
+export const setupTestingForClientTCP: TestingSetupFunction<
     NetLinkSocketClientTCP,
     EchoServerTCP
-> = (host, port) => {
+> = (suite: Mocha.Suite) => {
+    const [host, port] = testingAddress(suite.fullTitle());
     const server = new EchoServerTCP(port);
 
     const container = {
         netLink: (null as unknown) as NetLinkSocketClientTCP,
         server,
-        beforeEachTest: async () => {
-            const connectionPromise = server.events.newConnection.once();
-            await server.listen();
-            container.netLink = new NetLinkSocketClientTCP(host, port);
-            await connectionPromise;
-        },
-        afterEachTest: async () => {
-            const disconnectPromise = server.events.closedConnection.once();
-            container.netLink.disconnect();
-            await disconnectPromise;
-            await server.close();
-        },
+        host,
+        port,
     };
+
+    suite.beforeEach(async () => {
+        const connectionPromise = server.events.newConnection.once();
+        await server.listen();
+        container.netLink = new NetLinkSocketClientTCP(host, port);
+        await connectionPromise;
+    });
+
+    suite.afterEach(async () => {
+        const disconnectPromise = server.events.closedConnection.once();
+        container.netLink.disconnect();
+        await disconnectPromise;
+        await server.close();
+    });
 
     return container;
 };

@@ -7,10 +7,7 @@ describe("clients shared functionality", function () {
     for (const { setup, isTCP } of testingClients) {
         const testType = isTCP ? "TCP" : "UDP";
         describe(`${testType} client`, function () {
-            const [host, port] = testingAddress(this.fullTitle());
-            const testing = setup(host, port);
-            this.beforeEach(testing.beforeEachTest);
-            this.afterEach(testing.afterEachTest);
+            const testing = setup(this);
 
             it("can read and write strings", async function () {
                 const dataPromise = testing.server.events.sentData.once();
