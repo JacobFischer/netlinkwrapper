@@ -1,6 +1,7 @@
 import { Event, events } from "ts-typed-events";
 
-export abstract class EchoServer<T = unknown> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export abstract class EchoServer<T = any> {
     public readonly events = events({
         newConnection: new Event<T>(),
         closedConnection: new Event<{

@@ -8,6 +8,9 @@ const baseEslintConfig = {
     env: {
         mocha: true,
     },
+    rules: {
+        "mocha/no-setup-in-describe": "off",
+    },
 };
 
 module.exports = baseEslintConfig;

@@ -63,11 +63,11 @@ export class EchoServerTCP extends EchoServer<SocketTCP> {
     }
 }
 
-export const createTestingSetupClientTCP: TestingSetupFunction = (
-    host,
-    port,
-) => {
-    const server = new EchoServerTCP(port) as EchoServer;
+export const createTestingSetupClientTCP: TestingSetupFunction<
+    NetLinkSocketClientTCP,
+    EchoServerTCP
+> = (host, port) => {
+    const server = new EchoServerTCP(port);
 
     const container = {
         netLink: (null as unknown) as NetLinkSocketClientTCP,

@@ -1,32 +1,9 @@
 import { NetLinkSocketBase } from "../lib";
-import {
-    TestingSetupFunction,
-    createTestingSetupClientTCP,
-    createTestingSetupClientUDP,
-} from "./utils";
+import { testingClients } from "./utils";
 import { expect } from "chai";
 
 const host = "127.0.0.1";
 const startingPort = 48001;
-
-type TestingBasics = {
-    setup: TestingSetupFunction;
-    isClient: boolean;
-    isTCP: boolean;
-};
-
-const testingSupers: Array<TestingBasics> = [
-    {
-        setup: createTestingSetupClientTCP,
-        isClient: true,
-        isTCP: true,
-    },
-    {
-        setup: createTestingSetupClientUDP,
-        isClient: true,
-        isTCP: false,
-    },
-];
 
 describe("base sockets", function () {
     it("cannot be constructed as a base class.", function () {
@@ -36,10 +13,8 @@ describe("base sockets", function () {
         }).to.throw();
     });
 
-    /* eslint-disable mocha/no-setup-in-describe */
-    for (let i = 0; i < testingSupers.length; i++) {
-        const { setup, isClient, isTCP } = testingSupers[i];
-        /* eslint-enable mocha/no-setup-in-describe */
+    for (let i = 0; i < testingClients.length; i++) {
+        const { setup, isClient, isTCP } = testingClients[i];
         const port = startingPort + i;
         const testing = setup(host, port);
         const protocal = isTCP ? "TCP" : "UDP";

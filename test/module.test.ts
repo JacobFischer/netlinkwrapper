@@ -57,7 +57,6 @@ describe("module", function () {
     });
 
     describe("exports the correct shapes", function () {
-        // eslint-disable-next-line mocha/no-setup-in-describe
         for (const [className, expectedShape] of Object.entries(
             expectedShapes,
         )) {

@@ -57,11 +57,11 @@ export class EchoServerUDP extends EchoServer<RemoteInfo> {
     }
 }
 
-export const createTestingSetupClientUDP: TestingSetupFunction = (
-    host,
-    port,
-) => {
-    const server = new EchoServerUDP(port) as EchoServer;
+export const createTestingSetupClientUDP: TestingSetupFunction<
+    NetLinkSocketClientUDP,
+    EchoServerUDP
+> = (host, port) => {
+    const server = new EchoServerUDP(port);
 
     const container = {
         netLink: (null as unknown) as NetLinkSocketClientUDP,
