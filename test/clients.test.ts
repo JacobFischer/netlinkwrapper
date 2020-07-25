@@ -9,7 +9,6 @@ describe("clients shared functionality", function () {
         describe(`${testType} client`, function () {
             const testing = setup(this);
 
-            /*
             it("can read and write strings", async function () {
                 const dataPromise = testing.server.events.sentData.once();
 
@@ -21,7 +20,7 @@ describe("clients shared functionality", function () {
 
                 const read = testing.netLink.read();
                 expect(read).to.be.instanceOf(Buffer);
-                expect(read && read.toString()).to.equal(sentString);
+                expect(read?.toString()).to.equal(sentString);
             });
 
             it("can do non blocking reads", function () {
@@ -43,7 +42,6 @@ describe("clients shared functionality", function () {
                     testing.netLink.getNextReadSize() + 1,
                 ).to.be.greaterThan(serverSent.data.length);
             });
-            */
 
             it("can do blocking reads", async function () {
                 this.timeout(10_000); // slow because child process need ts-node transpiling on the fly
@@ -63,13 +61,6 @@ describe("clients shared functionality", function () {
                         testType,
                     },
                     execArgv: ["-r", "ts-node/register"],
-                });
-                worker.stdout?.on("data", (data) => {
-                    console.log(`stdout: ${data}`);
-                });
-
-                worker.stderr?.on("data", (data) => {
-                    console.error(`stderr: ${data}`);
                 });
 
                 await newConnectionPromise;

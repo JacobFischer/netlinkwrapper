@@ -13,8 +13,8 @@ const netLink = new NetLinkClientSocket("127.0.0.1", Number(testPort));
 netLink.setBlocking(true);
 
 netLink.write(testString);
-const echoed = netLink.read(); // must include buffer size, because right now getNextReadSize = 0
-const echoedString = echoed?.toString() || "NOTHING";
+const echoed = netLink.read();
+const echoedString = echoed?.toString() || -1;
 
 if (echoedString !== testString) {
     throw new Error(

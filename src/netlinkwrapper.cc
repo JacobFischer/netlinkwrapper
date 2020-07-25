@@ -582,53 +582,30 @@ void NetLinkWrapper::read(const v8::FunctionCallbackInfo<v8::Value> &args)
     auto socket = ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder())->socket;
     auto isolate = v8::Isolate::GetCurrent();
 
-    size_t to_read = socket->nextReadSize();
-    if (to_read <= 0)
+    if (socket->nextReadSize() < 1 && !socket->blocking())
     {
-        if (!socket->blocking())
-        {
-            // we're not blocking and there is nothing to read, returning here
-            // will return undefined to the js function, as there was nothing
-            // to read.
-            return;
-        }
-
-        to_read = READ_SIZE;
+        // we're not blocking and there is nothing to read, returning here
+        // will return undefined to the js function, as there was nothing
+        // to read.
+        return;
     }
 
     std::stringstream ss;
     try
     {
-        while (to_read > 0)
+        bool keep_reading = true;
+        while (keep_reading)
         {
-            bool talk = socket->protocol() == NL::Protocol::UDP && socket->blocking();
-            if (talk)
-            {
-                std::cout << "attemping to read bytes number " << to_read << std::endl;
-            }
-            char *buffer = new char[to_read];
-            auto buffer_read = socket->read(buffer, to_read);
+            char *buffer = new char[READ_SIZE];
+            auto buffer_read = socket->read(buffer, READ_SIZE);
             if (buffer_read > 0)
             {
                 ss << std::string(buffer, buffer_read);
             }
             delete[] buffer;
-            if (buffer_read < (int)to_read)
+            if (buffer_read != READ_SIZE)
             {
-                to_read = 0;
-                if (talk)
-                {
-                    std::cout << "what waht waht" << std::endl;
-                }
-            }
-            else
-            {
-                to_read = std::max(socket->nextReadSize(), READ_SIZE);
-            }
-
-            if (talk)
-            {
-                std::cout << "actuall read " << buffer_read << " and next will be " << to_read << std::endl;
+                keep_reading = false;
             }
         }
     }
