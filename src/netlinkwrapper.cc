@@ -294,17 +294,15 @@ void NetLinkWrapper::disconnect(const v8::FunctionCallbackInfo<v8::Value> &args)
     auto isolate = v8::Isolate::GetCurrent();
     // v8::HandleScope scope(isolate);
 
-#ifdef OS_WIN32
     size_t size = obj->socket->nextReadSize();
     if (size)
     {
-        // we need to drain the socket. Windows will hang on closing the socket
-        // if there is still data in the buffer
+        // we need to drain the socket. Otherwise it will hang on closing the
+        // socket if there is still data in the buffer.
         char *buffer = new char[size + 1];
         obj->socket->read(buffer, size);
-        delete buffer;
+        delete[] buffer;
     }
-#endif
 
     try
     {
@@ -638,12 +636,12 @@ void NetLinkWrapper::read(const v8::FunctionCallbackInfo<v8::Value> &args)
             {
                 // std::cout << "gotta read more of size: " << next_buffer_size << "." << std::endl;
                 std::string entire_string(buffer, buffer_size);
-                delete buffer;
+                delete[] buffer;
                 buffer_size = next_buffer_size;
                 buffer = new char[buffer_size];
                 buffer_read = socket->read(buffer, buffer_size);
                 std::string remaining_string(buffer, buffer_read);
-                delete buffer;
+                delete[] buffer;
                 entire_string += remaining_string;
                 buffer_size = entire_string.length();
                 buffer_read = buffer_size;

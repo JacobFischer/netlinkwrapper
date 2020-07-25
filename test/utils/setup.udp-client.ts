@@ -20,17 +20,33 @@ export class EchoServerUDP extends EchoServer<RemoteInfo> {
         return new Promise((resolve) => {
             this.socket = newUDP();
 
-            this.socket.on("message", (message, remote) => {
+            // eslint-disable-next-line @typescript-eslint/no-misused-promises
+            this.socket.on("message", async (message, remote) => {
                 // UDP does not form true connections, so we will "fake" it
                 const data = message.toString();
 
                 this.events.newConnection.emit(remote);
+
+                // echo it back
+                await new Promise((res, rej) =>
+                    this.socket.send(
+                        data,
+                        remote.port,
+                        remote.address,
+                        (err, val) => {
+                            if (err) {
+                                rej(err);
+                            } else {
+                                res(val);
+                            }
+                        },
+                    ),
+                );
+
                 this.events.sentData.emit({
                     from: remote,
                     data,
                 });
-                // echo it back
-                this.socket.send(data, remote.port, remote.address);
 
                 this.events.closedConnection.emit({
                     from: remote,
