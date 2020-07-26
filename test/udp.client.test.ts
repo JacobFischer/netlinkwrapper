@@ -1,8 +1,30 @@
+import { NetLinkSocketClientUDP } from "../lib";
 import { setupTestingForClientUDP } from "./utils";
 import { expect } from "chai";
 
 describe("UDP client specific functionality", function () {
     const testing = setupTestingForClientUDP(this);
+
+    it("can be constructed with portTo set", async function () {
+        const sibling = testing.netLink;
+        const portFrom = sibling.getPortFrom() + 100;
+        expect(portFrom).not.to.equal(sibling.getPortFrom());
+        expect(portFrom).not.to.equal(sibling.getPortTo());
+
+        const udp = new NetLinkSocketClientUDP(
+            testing.host,
+            testing.port,
+            portFrom,
+        );
+
+        const testingString = `My port should be from: ${portFrom}`;
+        const onceSent = testing.server.events.sentData.once();
+        udp.write(testingString);
+        const sent = await onceSent;
+
+        expect(sent.from.port).to.equal(portFrom);
+        expect(sent.data.toString()).to.equal(testingString);
+    });
 
     it("can readFrom other UDP sockets", async function () {
         const sentPromise = testing.server.events.sentData.once();
