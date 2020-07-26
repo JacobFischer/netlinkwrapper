@@ -93,17 +93,14 @@ void NetLinkWrapper::new_client_tcp(const v8::FunctionCallbackInfo<v8::Value> &a
 
     if (!args.IsConstructCall())
     {
-        // Invoked as plain function `NetLinkWrapper(...)`, turn into construct call.
-        const int argc = 1;
-        v8::Local<v8::Value> argv[argc] = {args[0]};
-        v8::Local<v8::Function> cons = v8::Local<v8::Function>::New(isolate, constructor);
-        args.GetReturnValue().Set(Nan::NewInstance(cons, argc, argv).ToLocalChecked());
+        isolate->ThrowException(v8::Exception::Error(Nan::New("NetLinkSocketClientTCP constructor must be invoked via 'new'.").ToLocalChecked()));
         return;
     }
     // else Invoked as constructor: `new NetLinkWrapper(...)`
 
     std::string host;
-    unsigned int port;
+    NL::IPVer ipver = NL::IPVer::IP4;
+    unsigned int port = 0;
     if (args.Length() >= 2)
     {
         auto arg_host = args[0];
@@ -123,17 +120,43 @@ void NetLinkWrapper::new_client_tcp(const v8::FunctionCallbackInfo<v8::Value> &a
         }
         auto as_number = arg_port->NumberValue(isolate->GetCurrentContext()).FromJust();
         port = static_cast<int>(as_number);
+
+        if (args.Length() >= 3)
+        {
+            auto arg_ipver = args[2];
+            if (!arg_ipver->IsNullOrUndefined())
+            {
+                if (!arg_ipver->IsString())
+                {
+                    isolate->ThrowException(v8::Exception::TypeError(Nan::New("'new NetLinkSocketClientTCP' third argument must be an ip version string").ToLocalChecked()));
+                    return;
+                }
+                // else is string
+                Nan::Utf8String ipver_utf8_string(arg_ipver);
+                std::string ipver_string(*ipver_utf8_string);
+
+                if (ipver_string.compare("IPv6") == 0)
+                {
+                    ipver = NL::IPVer::IP6;
+                }
+                else if (ipver_string.compare("IPv4") != 0)
+                {
+                    isolate->ThrowException(v8::Exception::TypeError(Nan::New("'new NetLinkSocketClientTCP' third argument must be either string 'IPv4' or 'IPv6'").ToLocalChecked()));
+                    return;
+                }
+            }
+        }
     }
     else
     {
-        isolate->ThrowException(v8::Exception::TypeError(Nan::New("'new NetLinkSocketClientTCP' requires 2 arguments to be constructed").ToLocalChecked()));
+        isolate->ThrowException(v8::Exception::TypeError(Nan::New("'new NetLinkSocketClientTCP' requires at least 2 arguments to be constructed").ToLocalChecked()));
         return;
     }
 
     NL::Socket *socket;
     try
     {
-        socket = new NL::Socket(host, port);
+        socket = new NL::Socket(host, port, NL::Protocol::TCP, ipver);
     }
     catch (NL::Exception &e)
     {
