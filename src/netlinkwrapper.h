@@ -3,6 +3,7 @@
 
 #include <node.h>
 #include <node_object_wrap.h>
+#include <memory>
 #include "netlink/socket.h"
 
 class NetLinkWrapper : public node::ObjectWrap
@@ -11,15 +12,16 @@ public:
     static void init(v8::Local<v8::Object> exports);
 
 private:
-    NL::Socket *socket;
+    std::unique_ptr<NL::Socket> socket;
+    bool destroyed = false;
 
     explicit NetLinkWrapper(NL::Socket *socket);
     ~NetLinkWrapper();
 
     static v8::Persistent<v8::Function> constructor;
-    static v8::Local<v8::FunctionTemplate> class_socket_base;
-    static v8::Local<v8::FunctionTemplate> class_socket_client_tcp;
-    static v8::Local<v8::FunctionTemplate> class_socket_client_udp;
+    static v8::Persistent<v8::FunctionTemplate> class_socket_base;
+    static v8::Persistent<v8::FunctionTemplate> class_socket_client_tcp;
+    static v8::Persistent<v8::FunctionTemplate> class_socket_client_udp;
 
     static void new_base(const v8::FunctionCallbackInfo<v8::Value> &args);
     static void new_client_tcp(const v8::FunctionCallbackInfo<v8::Value> &args);
