@@ -3,7 +3,7 @@
 export declare abstract class NetLinkSocketBase<
     TProtocal extends "TCP" | "UDP" | undefined = undefined,
     TType extends "server" | "client" | undefined = undefined
-    > {
+> {
     disconnect(): void;
     getHostTo(): string;
     getHostFrom(): string;
@@ -40,7 +40,7 @@ export declare abstract class NetLinkSocketBase<
 
 declare class NetLinkSocketClient<
     TProtocal extends "TCP" | "UDP"
-    > extends NetLinkSocketBase<TProtocal, "client"> {
+> extends NetLinkSocketBase<TProtocal, "client"> {
     constructor(hostTo: string, portTo: number, ipVersion?: "IPv4" | "IPv6");
 
     read(): Buffer | undefined;
@@ -50,11 +50,11 @@ declare class NetLinkSocketClient<
 
 export declare class NetLinkSocketClientTCP extends NetLinkSocketClient<
     "TCP"
-    > { }
+> {}
 
 export declare class NetLinkSocketClientUDP extends NetLinkSocketClient<
     "UDP"
-    > {
+> {
     constructor(hostTo: string, portTo: number, ipVersion?: "IPv4" | "IPv6");
     constructor(
         hostTo: string,
@@ -79,7 +79,7 @@ export declare class NetLinkSocketClientUDP extends NetLinkSocketClient<
 
 declare class NetLinkSocketServer<
     TProtocal extends "TCP" | "UDP"
-    > extends NetLinkSocketBase<TProtocal, "server"> {
+> extends NetLinkSocketBase<TProtocal, "server"> {
     constructor(
         portFrom: number,
         hostFrom?: string,
@@ -90,11 +90,11 @@ declare class NetLinkSocketServer<
 
 export declare class NetLinkSocketServerTCP extends NetLinkSocketServer<
     "TCP"
-    > {
+> {
     accept(): NetLinkSocketClientTCP;
     getListenQueue(): number;
 }
 
 export declare class NetLinkSocketServerUDP extends NetLinkSocketServer<
     "UDP"
-    > { }
+> {}
