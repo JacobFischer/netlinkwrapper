@@ -63,8 +63,16 @@ export declare class NetLinkSocketClientUDP extends NetLinkSocketClient<
         ipVersion?: "IPv4" | "IPv6",
     );
 
-    sendTo(data: Buffer, hostTo: string, portTo: number): void;
-    readFrom(hostFrom: string, portFrom?: number): Buffer;
+    writeTo(
+        hostTo: string,
+        portTo: number,
+        data: string | Uint8Array | Buffer,
+    ): void;
+    readFrom(): {
+        host: string;
+        port: number;
+        data: Buffer;
+    };
 }
 
 // -- Servers -- \\

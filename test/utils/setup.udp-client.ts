@@ -74,7 +74,7 @@ export class EchoServerUDP extends EchoServer<RemoteInfo> {
     }
 }
 
-export const createTestingSetupClientUDP: TestingSetupFunction<
+export const setupTestingForClientUDP: TestingSetupFunction<
     NetLinkSocketClientUDP,
     EchoServerUDP
 > = (suite) => {

@@ -629,36 +629,34 @@ void NetLinkWrapper::read_from(const v8::FunctionCallbackInfo<v8::Value> &args)
     auto obj = ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
     auto isolate = v8::Isolate::GetCurrent();
 
-    size_t buffer_size = obj->socket->nextReadSize();
-    if (args.Length() > 0)
-    {
-        auto arg = args[0];
-        if (!arg->IsNumber())
-        {
-            isolate->ThrowException(v8::Exception::TypeError(Nan::New("'readFrom' first argument must be a number representing how many bytes to try to read").ToLocalChecked()));
-            return;
-        }
-        auto as_number = arg->NumberValue(isolate->GetCurrentContext()).FromJust();
-        buffer_size = static_cast<int>(as_number);
-    }
-
-    char *buffer = new char[buffer_size];
-    int buffer_read = 0;
-    std::string host_from;
-    unsigned int port_from;
+    std::stringstream read_ss;
+    std::string host_from = "";
+    unsigned int port_from = 0;
     try
     {
-        buffer_read = obj->socket->readFrom(buffer, buffer_size, &host_from, &port_from);
+        bool keep_reading = true;
+        while (keep_reading)
+        {
+            auto buffer = std::array<char, READ_SIZE>();
+            auto buffer_read = obj->socket->readFrom(buffer.data(), READ_SIZE, &host_from, &port_from);
+            if (buffer_read > 0)
+            {
+                read_ss << std::string(buffer.data(), buffer_read);
+            }
+            if (buffer_read != READ_SIZE)
+            {
+                keep_reading = false;
+            }
+        }
     }
     catch (NL::Exception &e)
     {
         isolate->ThrowException(v8::Exception::Error(Nan::New(e.what()).ToLocalChecked()));
         return;
     }
-    std::string read(buffer, buffer_read);
-    delete[] buffer;
 
-    if (buffer_read > -1 && buffer_read <= (int)buffer_size) // range check
+    auto read = read_ss.str();
+    if (host_from.length() || port_from || read.length())
     {
         // args.GetReturnValue().Set(Nan::New(read.c_str()).ToLocalChecked());
         auto return_object = Nan::New<v8::Object>();
@@ -803,7 +801,7 @@ void NetLinkWrapper::write_to(const v8::FunctionCallbackInfo<v8::Value> &args)
 
     try
     {
-        obj->socket->sendTo(writing.c_str(), writing.length() + 1, host, port);
+        obj->socket->sendTo(writing.c_str(), writing.length(), host, port);
     }
     catch (NL::Exception &e)
     {
