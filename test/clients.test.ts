@@ -1,7 +1,8 @@
-import { testingClients } from "./utils";
 import { expect } from "chai";
 import { fork } from "child_process";
 import { join, resolve } from "path";
+import { testingClients } from "./utils";
+import { NetLinkSocketClientTCP, NetLinkSocketClientUDP } from "../lib";
 
 describe("clients shared functionality", function () {
     for (const { setup, isTCP } of testingClients) {
@@ -85,6 +86,23 @@ describe("clients shared functionality", function () {
                     }),
                 );
                 expect(code).to.equal(0);
+            });
+
+            it("can be IPv6", async function () {
+                const sentData = testing.server.events.sentData.once();
+                const Constructor = isTCP
+                    ? NetLinkSocketClientTCP
+                    : NetLinkSocketClientUDP;
+                const client = new Constructor("::1", testing.port, "IPv6");
+
+                client.write("Hello!");
+                const sent = await sentData;
+                // server always sees IPv6 addresses so no need to check
+                // getting data means it formed the connection,
+                // thus the IPv6 address works
+                expect(sent.from).to.exist;
+                expect(client.isIPv6()).to.be.true;
+                client.disconnect();
             });
         });
     }
