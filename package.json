@@ -62,7 +62,7 @@
     "purge": "npm run clean && shx rm -rf node_modules/ && rm -rf package-lock.json",
     "docs": "jsdoc main.js -r ./README.md -t node_modules/jaguarjs-jsdoc -c conf.json -d docs",
     "docs:predeploy": "shx touch docs/.nojekyll",
-    "rebuild": "node-gyp rebuild",
+    "build": "node-gyp rebuild",
     "lint": "eslint ./",
     "prettier:base": "prettier **/*.{js,ts}",
     "prettier": "npm run prettier:base -- --write",

@@ -1,7 +1,7 @@
 import { Event, events } from "ts-typed-events";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export abstract class EchoServer<T = any> {
+export abstract class EchoSocket<T = any> {
     public readonly events = events({
         newConnection: new Event<T>(),
         closedConnection: new Event<{
@@ -18,7 +18,6 @@ export abstract class EchoServer<T = any> {
         // pass
     }
 
-    public abstract listen(): Promise<void>;
-    public abstract close(): Promise<void>;
-    public abstract countConnections(): Promise<number>;
+    public abstract start(): Promise<void>;
+    public abstract stop(): Promise<void>;
 }

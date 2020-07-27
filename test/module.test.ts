@@ -4,16 +4,10 @@ import { expectType, TypeEqual } from "ts-expect";
 
 const expectedNetLinkSocketBase = [
     "disconnect",
-    "getHostTo",
-    "getHostFrom",
-    "getPortTo",
     "getPortFrom",
-    "getSocketHandler",
     "isBlocking",
-    "isClient",
     "isIPv4",
     "isIPv6",
-    "isServer",
     "isTCP",
     "isUDP",
     "setBlocking",
@@ -21,9 +15,12 @@ const expectedNetLinkSocketBase = [
 
 const expectedNetLinkSocketClientTCP = [
     ...expectedNetLinkSocketBase,
-    "read",
-    "write",
-    "getNextReadSize",
+    "getPortTo",
+    "getHostTo",
+    "receive",
+    "send",
+    "isClient",
+    "isServer",
 ] as const;
 
 const expectedShapes = {

@@ -1,5 +1,5 @@
 import { NetLinkSocketBase } from "../lib";
-import { testingClients } from "./utils";
+import { setups } from "./utils";
 import { expect } from "chai";
 
 describe("base sockets", function () {
@@ -10,7 +10,7 @@ describe("base sockets", function () {
         }).to.throw();
     });
 
-    for (const { setup, isClient, isTCP } of testingClients) {
+    for (const { setup, isClient, isTCP } of setups) {
         const protocal = isTCP ? "TCP" : "UDP";
         const socketType = isClient ? "Client" : "Server";
         const description = `${protocal} ${socketType} base functionality`;
@@ -33,41 +33,10 @@ describe("base sockets", function () {
                 expect(testing.netLink.isBlocking()).to.be.false;
             });
 
-            it("can get hostFrom", function () {
-                const hostFrom = testing.netLink.getHostFrom();
-                expect(typeof hostFrom).to.equal("string");
-            });
-
-            it("can get hostTo", function () {
-                expect(testing.netLink.getHostTo()).to.equal(testing.host);
-            });
-
             it("can get portFrom", function () {
-                expect(typeof testing.netLink.getPortFrom()).to.equal(
-                    "number",
-                );
-            });
-
-            it("can get portTo", function () {
-                expect(testing.netLink.getPortTo()).to.equal(testing.port);
-            });
-
-            it("can get socketHandler", function () {
-                expect(typeof testing.netLink.getSocketHandler()).to.equal(
-                    "number",
-                );
-            });
-
-            it("can check isClient", function () {
-                const checked = testing.netLink.isClient();
-                expect(typeof checked).to.equal("boolean");
-                expect(checked).to.equal(isClient);
-            });
-
-            it("can check isServer", function () {
-                const checked = testing.netLink.isServer();
-                expect(typeof checked).to.equal("boolean");
-                expect(checked).to.equal(!isClient);
+                const portFrom = testing.netLink.getPortFrom();
+                expect(typeof portFrom).to.equal("number");
+                // can't gaurntee portFrom is bound to a specific number for
             });
 
             it("can check isTCP", function () {

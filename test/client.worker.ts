@@ -1,4 +1,4 @@
-import { NetLinkSocketClientTCP, NetLinkSocketClientUDP } from "../lib";
+import { NetLinkSocketClientTCP, NetLinkSocketUDP } from "../lib";
 
 const { testString, testPort, testType } = process.env;
 
@@ -7,13 +7,13 @@ if (!testString || !testPort || !testType) {
 }
 
 const NetLinkClientSocket =
-    testType === "TCP" ? NetLinkSocketClientTCP : NetLinkSocketClientUDP;
+    testType === "TCP" ? NetLinkSocketClientTCP : NetLinkSocketUDP;
 
 const netLink = new NetLinkClientSocket("127.0.0.1", Number(testPort));
 netLink.setBlocking(true);
 
-netLink.write(testString);
-const echoed = netLink.read();
+netLink.send(testString);
+const echoed = netLink.receive();
 const echoedString = echoed?.toString() || -1;
 
 if (echoedString !== testString) {

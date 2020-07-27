@@ -11,10 +11,10 @@
 
 #define READ_SIZE 255
 
-v8::Persistent<v8::Function> NetLinkWrapper::constructor;
 v8::Persistent<v8::FunctionTemplate> NetLinkWrapper::class_socket_base;
-v8::Persistent<v8::FunctionTemplate> NetLinkWrapper::class_socket_client_tcp;
-v8::Persistent<v8::FunctionTemplate> NetLinkWrapper::class_socket_client_udp;
+v8::Persistent<v8::FunctionTemplate> NetLinkWrapper::class_socket_tcp_client;
+v8::Persistent<v8::FunctionTemplate> NetLinkWrapper::class_socket_tcp_server;
+v8::Persistent<v8::FunctionTemplate> NetLinkWrapper::class_socket_udp;
 
 NetLinkWrapper::NetLinkWrapper(NL::Socket *socket)
 {
@@ -33,52 +33,57 @@ void NetLinkWrapper::init(v8::Local<v8::Object> exports)
     // https://stackoverflow.com/questions/28076382/v8-inherited-functiontemplate-not-getting-updates-to-the-parent-functiontemplate
 
     auto name_base = Nan::New("NetLinkSocketBase").ToLocalChecked();
-    auto base = v8::FunctionTemplate::New(isolate, new_base);
-    base->SetClassName(name_base);
-    base->InstanceTemplate()->SetInternalFieldCount(1);
+    auto base_template = v8::FunctionTemplate::New(isolate, new_base);
+    base_template->SetClassName(name_base);
+    base_template->InstanceTemplate()->SetInternalFieldCount(1);
 
     // Prototype
-    NODE_SET_PROTOTYPE_METHOD(base, "accept", accept);
-    NODE_SET_PROTOTYPE_METHOD(base, "disconnect", disconnect);
-    NODE_SET_PROTOTYPE_METHOD(base, "getHostFrom", get_host_from);
-    NODE_SET_PROTOTYPE_METHOD(base, "getHostTo", get_host_to);
-    NODE_SET_PROTOTYPE_METHOD(base, "getListenQueue", get_listen_queue);
-    NODE_SET_PROTOTYPE_METHOD(base, "getNextReadSize", get_next_read_size);
-    NODE_SET_PROTOTYPE_METHOD(base, "getPortFrom", get_port_from);
-    NODE_SET_PROTOTYPE_METHOD(base, "getPortTo", get_port_to);
-    NODE_SET_PROTOTYPE_METHOD(base, "getSocketHandler", get_socket_handler);
-    NODE_SET_PROTOTYPE_METHOD(base, "isBlocking", is_blocking);
-    NODE_SET_PROTOTYPE_METHOD(base, "isClient", is_client);
-    NODE_SET_PROTOTYPE_METHOD(base, "isIPv4", is_ipv4);
-    NODE_SET_PROTOTYPE_METHOD(base, "isIPv6", is_ipv6);
-    NODE_SET_PROTOTYPE_METHOD(base, "isServer", is_server);
-    NODE_SET_PROTOTYPE_METHOD(base, "isTCP", is_tcp);
-    NODE_SET_PROTOTYPE_METHOD(base, "isUDP", is_udp);
-    NODE_SET_PROTOTYPE_METHOD(base, "read", read);
-    NODE_SET_PROTOTYPE_METHOD(base, "readFrom", read_from);
-    NODE_SET_PROTOTYPE_METHOD(base, "setBlocking", set_blocking);
-    NODE_SET_PROTOTYPE_METHOD(base, "write", write);
-    NODE_SET_PROTOTYPE_METHOD(base, "writeTo", write_to);
+    NODE_SET_PROTOTYPE_METHOD(base_template, "accept", accept);
+    NODE_SET_PROTOTYPE_METHOD(base_template, "disconnect", disconnect);
+    NODE_SET_PROTOTYPE_METHOD(base_template, "getHostFrom", get_host_from);
+    NODE_SET_PROTOTYPE_METHOD(base_template, "getHostTo", get_host_to);
+    NODE_SET_PROTOTYPE_METHOD(base_template, "getPortFrom", get_port_from);
+    NODE_SET_PROTOTYPE_METHOD(base_template, "getPortTo", get_port_to);
+    NODE_SET_PROTOTYPE_METHOD(base_template, "isBlocking", is_blocking);
+    NODE_SET_PROTOTYPE_METHOD(base_template, "isClient", is_client);
+    NODE_SET_PROTOTYPE_METHOD(base_template, "isIPv4", is_ipv4);
+    NODE_SET_PROTOTYPE_METHOD(base_template, "isIPv6", is_ipv6);
+    NODE_SET_PROTOTYPE_METHOD(base_template, "isServer", is_server);
+    NODE_SET_PROTOTYPE_METHOD(base_template, "isTCP", is_tcp);
+    NODE_SET_PROTOTYPE_METHOD(base_template, "isUDP", is_udp);
+    NODE_SET_PROTOTYPE_METHOD(base_template, "receive", receive);
+    NODE_SET_PROTOTYPE_METHOD(base_template, "receiveFrom", receive_from);
+    NODE_SET_PROTOTYPE_METHOD(base_template, "setBlocking", set_blocking);
+    NODE_SET_PROTOTYPE_METHOD(base_template, "send", send);
+    NODE_SET_PROTOTYPE_METHOD(base_template, "sendTo", send_to);
 
-    auto name_client_tcp = Nan::New("NetLinkSocketClientTCP").ToLocalChecked();
-    auto client_tcp = v8::FunctionTemplate::New(isolate, new_client_tcp);
-    client_tcp->SetClassName(name_client_tcp);
-    client_tcp->InstanceTemplate()->SetInternalFieldCount(1);
-    client_tcp->Inherit(base);
+    auto name_tcp_client = Nan::New("NetLinkSocketClientTCP").ToLocalChecked();
+    auto tcp_client_template = v8::FunctionTemplate::New(isolate, new_tcp_client);
+    tcp_client_template->SetClassName(name_tcp_client);
+    tcp_client_template->InstanceTemplate()->SetInternalFieldCount(1);
+    tcp_client_template->Inherit(base_template);
 
-    auto name_client_udp = Nan::New("NetLinkSocketClientUDP").ToLocalChecked();
-    auto client_udp = v8::FunctionTemplate::New(isolate, new_client_udp);
-    client_udp->SetClassName(name_client_udp);
-    client_udp->InstanceTemplate()->SetInternalFieldCount(1);
-    client_udp->Inherit(base);
+    auto name_udp = Nan::New("NetLinkSocketUDP").ToLocalChecked();
+    auto udp_template = v8::FunctionTemplate::New(isolate, new_udp);
+    udp_template->SetClassName(name_udp);
+    udp_template->InstanceTemplate()->SetInternalFieldCount(1);
+    udp_template->Inherit(base_template);
 
-    Nan::Set(exports, name_base, Nan::GetFunction(base).ToLocalChecked());
-    Nan::Set(exports, name_client_tcp, Nan::GetFunction(client_tcp).ToLocalChecked());
-    Nan::Set(exports, name_client_udp, Nan::GetFunction(client_udp).ToLocalChecked());
+    auto name_tcp_server = Nan::New("NetLinkSocketServerTCP").ToLocalChecked();
+    auto tcp_server_template = v8::FunctionTemplate::New(isolate, new_tcp_server);
+    tcp_server_template->SetClassName(name_tcp_server);
+    tcp_server_template->InstanceTemplate()->SetInternalFieldCount(1);
+    tcp_server_template->Inherit(base_template);
 
-    // NetLinkWrapper::class_socket_base = v8::Persistent<v8::FunctionTemplate>(isolate, base);
-    // NetLinkWrapper::class_socket_client_tcp = v8::Persistent<v8::FunctionTemplate>(isolate, client_tcp);
-    // NetLinkWrapper::class_socket_client_udp = v8::Persistent<v8::FunctionTemplate>(isolate, client_udp);
+    Nan::Set(exports, name_base, Nan::GetFunction(base_template).ToLocalChecked());
+    Nan::Set(exports, name_tcp_client, Nan::GetFunction(tcp_client_template).ToLocalChecked());
+    Nan::Set(exports, name_tcp_server, Nan::GetFunction(tcp_server_template).ToLocalChecked());
+    Nan::Set(exports, name_udp, Nan::GetFunction(udp_template).ToLocalChecked());
+
+    class_socket_base.Reset(isolate, v8::Persistent<v8::FunctionTemplate>(isolate, base_template));
+    class_socket_tcp_client.Reset(isolate, v8::Persistent<v8::FunctionTemplate>(isolate, tcp_client_template));
+    class_socket_tcp_server.Reset(isolate, v8::Persistent<v8::FunctionTemplate>(isolate, tcp_server_template));
+    class_socket_udp.Reset(isolate, v8::Persistent<v8::FunctionTemplate>(isolate, udp_template));
 }
 
 void NetLinkWrapper::new_base(const v8::FunctionCallbackInfo<v8::Value> &args)
@@ -87,7 +92,7 @@ void NetLinkWrapper::new_base(const v8::FunctionCallbackInfo<v8::Value> &args)
     isolate->ThrowException(v8::Exception::Error(Nan::New("NetLinkSocketBase should not be directly constructed").ToLocalChecked()));
 }
 
-void NetLinkWrapper::new_client_tcp(const v8::FunctionCallbackInfo<v8::Value> &args)
+void NetLinkWrapper::new_tcp_client(const v8::FunctionCallbackInfo<v8::Value> &args)
 {
     auto isolate = v8::Isolate::GetCurrent();
 
@@ -169,99 +174,79 @@ void NetLinkWrapper::new_client_tcp(const v8::FunctionCallbackInfo<v8::Value> &a
     args.GetReturnValue().Set(args.This());
 }
 
-void NetLinkWrapper::new_client_udp(const v8::FunctionCallbackInfo<v8::Value> &args)
+void NetLinkWrapper::new_udp(const v8::FunctionCallbackInfo<v8::Value> &args)
 {
     auto isolate = v8::Isolate::GetCurrent();
 
     if (!args.IsConstructCall())
     {
-        isolate->ThrowException(v8::Exception::Error(Nan::New("NetLinkSocketClientUDP constructor must be invoked via 'new'.").ToLocalChecked()));
+        isolate->ThrowException(v8::Exception::Error(Nan::New("NetLinkSocketUDP constructor must be invoked via 'new'.").ToLocalChecked()));
         return;
     }
     // else Invoked as constructor: `new NetLinkWrapper(...)`
 
+    // expected args, in order
     std::string host_to;
-    unsigned int port_to;
+    unsigned int port_to = 0;
     unsigned int port_from = 0;
     NL::IPVer ipver = NL::IPVer::IP4;
-    if (args.Length() >= 2)
-    {
-        auto arg_host_to = args[0];
-        if (!arg_host_to->IsString())
-        {
-            isolate->ThrowException(v8::Exception::TypeError(Nan::New("'new NetLinkSocketClientUDP' first argument must be a hostTo string").ToLocalChecked()));
-            return;
-        }
-        Nan::Utf8String host_utf8_string(arg_host_to);
-        host_to = std::string(*host_utf8_string);
 
-        auto arg_port_to = args[1];
-        if (!arg_port_to->IsNumber())
-        {
-            isolate->ThrowException(v8::Exception::TypeError(Nan::New("'new NetLinkSocketClientUDP' second argument must be a portTo number").ToLocalChecked()));
-            return;
-        }
-        auto as_number = arg_port_to->NumberValue(isolate->GetCurrentContext()).FromJust();
-        port_to = static_cast<int>(as_number);
-    }
-    else
+    if (args.Length() < 2)
     {
-        isolate->ThrowException(v8::Exception::TypeError(Nan::New("'new NetLinkSocketClientUDP' requires at least 2 arguments to be constructed").ToLocalChecked()));
+        isolate->ThrowException(v8::Exception::TypeError(Nan::New("'new NetLinkSocketUDP' requires at least 2 arguments to be constructed").ToLocalChecked()));
         return;
     }
 
-    v8::Local<v8::Value> *maybe_ip = NULL;
-    if (args.Length() >= 3)
+    auto arg_host_to = args[0];
+    if (!arg_host_to->IsString())
+    {
+        isolate->ThrowException(v8::Exception::TypeError(Nan::New("'new NetLinkSocketUDP' first argument must be a hostTo string").ToLocalChecked()));
+        return;
+    }
+    Nan::Utf8String host_utf8_string(arg_host_to);
+    host_to = std::string(*host_utf8_string);
+
+    auto arg_port_to = args[1];
+    if (!arg_port_to->IsNumber())
+    {
+        isolate->ThrowException(v8::Exception::TypeError(Nan::New("'new NetLinkSocketUDP' second argument must be a portTo number").ToLocalChecked()));
+        return;
+    }
+    auto as_number = arg_port_to->NumberValue(isolate->GetCurrentContext()).FromJust();
+    port_to = static_cast<int>(as_number);
+
+    if (args.Length() >= 3 && !args[2]->IsUndefined())
     {
         auto third_arg = args[2];
-        if (third_arg->IsNumber())
+        if (!third_arg->IsNumber())
         {
-            auto as_number = third_arg->NumberValue(isolate->GetCurrentContext()).FromJust();
-            port_from = static_cast<int>(as_number);
-        }
-        else if (third_arg->IsString())
-        {
-            maybe_ip = &third_arg;
-        }
-        else if (third_arg->IsNullOrUndefined())
-        {
-            // do nothing, they don't care about the port or IP, both are optional anyways
-        }
-        else
-        {
-            isolate->ThrowException(v8::Exception::TypeError(Nan::New("'new NetLinkSocketClientUDP' third argument must be a portFrom number").ToLocalChecked()));
+            isolate->ThrowException(v8::Exception::TypeError(Nan::New("'new NetLinkSocketUDP' third argument must be a portFrom number").ToLocalChecked()));
             return;
         }
-    }
-    if (args.Length() >= 4)
-    {
-        auto fourth_arg = args[3];
-        if (fourth_arg->IsNullOrUndefined())
-        {
-            if (!fourth_arg->IsString())
-            {
-                isolate->ThrowException(v8::Exception::TypeError(Nan::New("'new NetLinkSocketClientUDP' fourth argument must be a portFrom number").ToLocalChecked()));
-                return;
-            }
-            maybe_ip = &fourth_arg;
-        }
+        auto as_number = third_arg->NumberValue(isolate->GetCurrentContext()).FromJust();
+        port_from = static_cast<int>(as_number);
     }
 
-    if (maybe_ip)
+    if (args.Length() >= 4 && !args[3]->IsUndefined())
     {
-        auto arg = *maybe_ip;
-        Nan::Utf8String ip_str_utf8(arg);
-        auto ip_str = std::string(*ip_str_utf8);
-        if (ip_str.compare("IPv6") == 0)
+        auto arg_ipver = args[3];
+        if (!arg_ipver->IsString())
+        {
+            isolate->ThrowException(v8::Exception::TypeError(Nan::New("'new NetLinkSocketUDP' third argument must be an ip version string").ToLocalChecked()));
+            return;
+        }
+        Nan::Utf8String ipver_utf8_string(arg_ipver);
+        std::string ipver_string(*ipver_utf8_string);
+
+        if (ipver_string.compare("IPv6") == 0)
         {
             ipver = NL::IPVer::IP6;
         }
-        else if (ip_str.compare("IPv4") != 0)
+        else if (ipver_string.compare("IPv4") != 0)
         {
-            isolate->ThrowException(v8::Exception::TypeError(Nan::New("'new NetLinkSocketClientUDP' ipVersion argument must be either 'IPv4' or 'IPv6' when set.").ToLocalChecked()));
+            isolate->ThrowException(v8::Exception::TypeError(Nan::New("'new NetLinkSocketUDP' fourth argument must be 'IPv4', 'IPv6' or undefined").ToLocalChecked()));
             return;
         }
-        // else keep the default, which is "IPv4"
     }
 
     NL::Socket *socket;
@@ -287,6 +272,86 @@ void NetLinkWrapper::new_client_udp(const v8::FunctionCallbackInfo<v8::Value> &a
     args.GetReturnValue().Set(args.This());
 }
 
+void NetLinkWrapper::new_tcp_server(const v8::FunctionCallbackInfo<v8::Value> &args)
+{
+    auto isolate = v8::Isolate::GetCurrent();
+
+    if (!args.IsConstructCall())
+    {
+        isolate->ThrowException(v8::Exception::Error(Nan::New("NetLinkSocketServerTCP constructor must be invoked via 'new'.").ToLocalChecked()));
+        return;
+    }
+
+    unsigned int port_from = 0;
+    std::string host_from;
+    NL::IPVer ipver = NL::IPVer::IP4;
+    if (args.Length() >= 1)
+    {
+        auto arg_port_from = args[0];
+        if (!arg_port_from->IsNumber())
+        {
+            isolate->ThrowException(v8::Exception::TypeError(Nan::New("'new NetLinkSocketServerTCP' first argument must be a portFrom number").ToLocalChecked()));
+            return;
+        }
+        auto as_number = arg_port_from->NumberValue(isolate->GetCurrentContext()).FromJust();
+        port_from = static_cast<int>(as_number);
+
+        if (args.Length() >= 2 && !args[1]->IsUndefined())
+        {
+            auto arg_host_from = args[1];
+            if (!arg_host_from->IsString())
+            {
+                isolate->ThrowException(v8::Exception::TypeError(Nan::New("'new NetLinkSocketServerTCP' second argument must be a host string to connect to").ToLocalChecked()));
+                return;
+            }
+            Nan::Utf8String host_utf8_string(arg_host_from);
+            host_from = std::string(*host_utf8_string);
+        }
+
+        if (args.Length() >= 3 && !args[2]->IsUndefined())
+        {
+            auto arg_ipver = args[2];
+            if (!arg_ipver->IsString())
+            {
+                isolate->ThrowException(v8::Exception::TypeError(Nan::New("'new NetLinkSocketServerTCP' third argument must be an ip version string").ToLocalChecked()));
+                return;
+            }
+            Nan::Utf8String ipver_utf8_string(arg_ipver);
+            std::string ipver_string(*ipver_utf8_string);
+
+            if (ipver_string.compare("IPv6") == 0)
+            {
+                ipver = NL::IPVer::IP6;
+            }
+            else if (ipver_string.compare("IPv4") != 0)
+            {
+                isolate->ThrowException(v8::Exception::TypeError(Nan::New("'new NetLinkSocketServerTCP' third argument must be either 'IPv4' or 'IPv6'").ToLocalChecked()));
+                return;
+            }
+        }
+    }
+    else
+    {
+        isolate->ThrowException(v8::Exception::TypeError(Nan::New("'new NetLinkSocketServerTCP' requires at least 1 argument to be constructed").ToLocalChecked()));
+        return;
+    }
+
+    NL::Socket *socket;
+    try
+    {
+        socket = new NL::Socket(port_from, NL::Protocol::TCP, ipver, host_from);
+    }
+    catch (NL::Exception &e)
+    {
+        isolate->ThrowException(v8::Exception::Error(Nan::New(e.what()).ToLocalChecked()));
+        return;
+    }
+
+    NetLinkWrapper *obj = new NetLinkWrapper(socket);
+    obj->Wrap(args.This());
+    args.GetReturnValue().Set(args.This());
+}
+
 void NetLinkWrapper::accept(const v8::FunctionCallbackInfo<v8::Value> &args)
 {
     auto obj = ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
@@ -294,6 +359,7 @@ void NetLinkWrapper::accept(const v8::FunctionCallbackInfo<v8::Value> &args)
     // v8::HandleScope scope(isolate);
 
     NL::Socket *accepted = NULL;
+
     try
     {
         accepted = obj->socket->accept();
@@ -306,14 +372,15 @@ void NetLinkWrapper::accept(const v8::FunctionCallbackInfo<v8::Value> &args)
 
     if (accepted != NULL)
     {
-        /*
-        NetLinkWrapper *new_wrapper = new NetLinkWrapper(accepted);
-        // accept only works on TCP, so we know for certain wrapped instances
-        // always must be TCP clients
-        auto instance = NetLinkWrapper::class_socket_client_tcp->New(isolate);
+        auto new_wrapper = new NetLinkWrapper(accepted);
+        // accept() only works on TCP servers,
+        // So we know for certain wrapped instances always must be TCP clients
+        auto function_template = NetLinkWrapper::class_socket_tcp_client.Get(isolate);
+        auto object_template = function_template->InstanceTemplate();
+        auto instance = Nan::NewInstance(object_template).ToLocalChecked();
         new_wrapper->Wrap(instance);
-        args.GetReturnValue().Set(new_wrapper);
-        */
+
+        args.GetReturnValue().Set(instance);
     }
 }
 
@@ -378,42 +445,6 @@ void NetLinkWrapper::get_host_to(const v8::FunctionCallbackInfo<v8::Value> &args
     }
 }
 
-void NetLinkWrapper::get_listen_queue(const v8::FunctionCallbackInfo<v8::Value> &args)
-{
-    auto obj = ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
-    auto isolate = v8::Isolate::GetCurrent();
-
-    try
-    {
-        auto val = obj->socket->listenQueue();
-        auto v8_number = v8::Number::New(isolate, val);
-        args.GetReturnValue().Set(v8_number);
-    }
-    catch (NL::Exception &e)
-    {
-        isolate->ThrowException(v8::Exception::Error(Nan::New(e.what()).ToLocalChecked()));
-        return;
-    }
-}
-
-void NetLinkWrapper::get_next_read_size(const v8::FunctionCallbackInfo<v8::Value> &args)
-{
-    auto obj = ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
-    auto isolate = v8::Isolate::GetCurrent();
-
-    try
-    {
-        auto val = obj->socket->nextReadSize();
-        auto v8_val = v8::Number::New(isolate, val);
-        args.GetReturnValue().Set(v8_val);
-    }
-    catch (NL::Exception &e)
-    {
-        isolate->ThrowException(v8::Exception::Error(Nan::New(e.what()).ToLocalChecked()));
-        return;
-    }
-}
-
 void NetLinkWrapper::get_port_from(const v8::FunctionCallbackInfo<v8::Value> &args)
 {
     auto obj = ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
@@ -440,25 +471,6 @@ void NetLinkWrapper::get_port_to(const v8::FunctionCallbackInfo<v8::Value> &args
     try
     {
         auto val = obj->socket->portTo();
-        auto v8_val = v8::Number::New(isolate, val);
-        args.GetReturnValue().Set(v8_val);
-    }
-    catch (NL::Exception &e)
-    {
-        isolate->ThrowException(v8::Exception::Error(Nan::New(e.what()).ToLocalChecked()));
-        return;
-    }
-}
-
-void NetLinkWrapper::get_socket_handler(const v8::FunctionCallbackInfo<v8::Value> &args)
-{
-    auto obj = ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
-    auto isolate = v8::Isolate::GetCurrent();
-    v8::HandleScope scope(isolate);
-
-    try
-    {
-        auto val = obj->socket->socketHandler();
         auto v8_val = v8::Number::New(isolate, val);
         args.GetReturnValue().Set(v8_val);
     }
@@ -602,7 +614,7 @@ void NetLinkWrapper::is_udp(const v8::FunctionCallbackInfo<v8::Value> &args)
     }
 }
 
-void NetLinkWrapper::read(const v8::FunctionCallbackInfo<v8::Value> &args)
+void NetLinkWrapper::receive(const v8::FunctionCallbackInfo<v8::Value> &args)
 {
     auto obj = ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
     auto isolate = v8::Isolate::GetCurrent();
@@ -647,7 +659,7 @@ void NetLinkWrapper::read(const v8::FunctionCallbackInfo<v8::Value> &args)
     // else it did not read any data, so this will return undefined
 }
 
-void NetLinkWrapper::read_from(const v8::FunctionCallbackInfo<v8::Value> &args)
+void NetLinkWrapper::receive_from(const v8::FunctionCallbackInfo<v8::Value> &args)
 {
     auto obj = ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
     auto isolate = v8::Isolate::GetCurrent();
@@ -715,7 +727,7 @@ void NetLinkWrapper::set_blocking(const v8::FunctionCallbackInfo<v8::Value> &arg
             return;
         }
 
-        bool blocking = arg->ToBoolean(isolate)->Value();
+        bool blocking = arg->BooleanValue(isolate);
 
         try
         {
@@ -734,7 +746,7 @@ void NetLinkWrapper::set_blocking(const v8::FunctionCallbackInfo<v8::Value> &arg
     }
 }
 
-void NetLinkWrapper::write(const v8::FunctionCallbackInfo<v8::Value> &args)
+void NetLinkWrapper::send(const v8::FunctionCallbackInfo<v8::Value> &args)
 {
     auto obj = ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
     auto isolate = v8::Isolate::GetCurrent();
@@ -776,7 +788,7 @@ void NetLinkWrapper::write(const v8::FunctionCallbackInfo<v8::Value> &args)
     }
 }
 
-void NetLinkWrapper::write_to(const v8::FunctionCallbackInfo<v8::Value> &args)
+void NetLinkWrapper::send_to(const v8::FunctionCallbackInfo<v8::Value> &args)
 {
     auto obj = ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
     auto isolate = v8::Isolate::GetCurrent();
@@ -790,7 +802,7 @@ void NetLinkWrapper::write_to(const v8::FunctionCallbackInfo<v8::Value> &args)
         auto arg_host = args[0];
         if (!arg_host->IsString())
         {
-            isolate->ThrowException(v8::Exception::TypeError(Nan::New("'writeTo' first argument must be a host string to send to").ToLocalChecked()));
+            isolate->ThrowException(v8::Exception::TypeError(Nan::New("'sendTo' first argument must be a host string to send to").ToLocalChecked()));
             return;
         }
         Nan::Utf8String host_utf8_string(arg_host);

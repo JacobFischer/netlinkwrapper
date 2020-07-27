@@ -18,24 +18,22 @@ private:
     explicit NetLinkWrapper(NL::Socket *socket);
     ~NetLinkWrapper();
 
-    static v8::Persistent<v8::Function> constructor;
     static v8::Persistent<v8::FunctionTemplate> class_socket_base;
-    static v8::Persistent<v8::FunctionTemplate> class_socket_client_tcp;
-    static v8::Persistent<v8::FunctionTemplate> class_socket_client_udp;
+    static v8::Persistent<v8::FunctionTemplate> class_socket_tcp_client;
+    static v8::Persistent<v8::FunctionTemplate> class_socket_tcp_server;
+    static v8::Persistent<v8::FunctionTemplate> class_socket_udp;
 
     static void new_base(const v8::FunctionCallbackInfo<v8::Value> &args);
-    static void new_client_tcp(const v8::FunctionCallbackInfo<v8::Value> &args);
-    static void new_client_udp(const v8::FunctionCallbackInfo<v8::Value> &args);
+    static void new_tcp_client(const v8::FunctionCallbackInfo<v8::Value> &args);
+    static void new_tcp_server(const v8::FunctionCallbackInfo<v8::Value> &args);
+    static void new_udp(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void accept(const v8::FunctionCallbackInfo<v8::Value> &args);
     static void disconnect(const v8::FunctionCallbackInfo<v8::Value> &args);
     static void get_host_from(const v8::FunctionCallbackInfo<v8::Value> &args);
     static void get_host_to(const v8::FunctionCallbackInfo<v8::Value> &args);
-    static void get_listen_queue(const v8::FunctionCallbackInfo<v8::Value> &args);
-    static void get_next_read_size(const v8::FunctionCallbackInfo<v8::Value> &args);
     static void get_port_from(const v8::FunctionCallbackInfo<v8::Value> &args);
     static void get_port_to(const v8::FunctionCallbackInfo<v8::Value> &args);
-    static void get_socket_handler(const v8::FunctionCallbackInfo<v8::Value> &args);
     static void is_blocking(const v8::FunctionCallbackInfo<v8::Value> &args);
     static void is_client(const v8::FunctionCallbackInfo<v8::Value> &args);
     static void is_ipv4(const v8::FunctionCallbackInfo<v8::Value> &args);
@@ -43,11 +41,11 @@ private:
     static void is_server(const v8::FunctionCallbackInfo<v8::Value> &args);
     static void is_tcp(const v8::FunctionCallbackInfo<v8::Value> &args);
     static void is_udp(const v8::FunctionCallbackInfo<v8::Value> &args);
-    static void read(const v8::FunctionCallbackInfo<v8::Value> &args);
-    static void read_from(const v8::FunctionCallbackInfo<v8::Value> &args);
+    static void receive(const v8::FunctionCallbackInfo<v8::Value> &args);
+    static void receive_from(const v8::FunctionCallbackInfo<v8::Value> &args);
     static void set_blocking(const v8::FunctionCallbackInfo<v8::Value> &args);
-    static void write(const v8::FunctionCallbackInfo<v8::Value> &args);
-    static void write_to(const v8::FunctionCallbackInfo<v8::Value> &args);
+    static void send(const v8::FunctionCallbackInfo<v8::Value> &args);
+    static void send_to(const v8::FunctionCallbackInfo<v8::Value> &args);
 };
 
 #endif

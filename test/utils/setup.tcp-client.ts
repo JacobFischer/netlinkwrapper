@@ -1,6 +1,6 @@
 import { createServer, Server, Socket as SocketTCP } from "net";
 import { testingAddress } from "./address";
-import { EchoServer } from "./echo-server";
+import { EchoSocket } from "./echo-socket";
 import { TestingSetupFunction } from "./setup";
 import { NetLinkSocketClientTCP } from "../../lib";
 
@@ -8,7 +8,7 @@ import { NetLinkSocketClientTCP } from "../../lib";
  * A simple Echo Server for testing.
  * Basically async/await syntax for clearer testing code.
  */
-export class EchoServerTCP extends EchoServer<SocketTCP> {
+export class EchoServerTCP extends EchoSocket<SocketTCP> {
     private readonly server: Server;
     private readonly listeners = new Set<SocketTCP>();
 
@@ -33,13 +33,13 @@ export class EchoServerTCP extends EchoServer<SocketTCP> {
         });
     }
 
-    public listen(): Promise<void> {
+    public start(): Promise<void> {
         return new Promise((resolve) =>
             this.server.listen(this.port, resolve),
         );
     }
 
-    public close(): Promise<void> {
+    public stop(): Promise<void> {
         return new Promise((resolve, reject) =>
             this.server.close((err) => {
                 if (err) {
@@ -73,14 +73,14 @@ export const setupTestingForClientTCP: TestingSetupFunction<
 
     const container = {
         netLink: (null as unknown) as NetLinkSocketClientTCP,
-        server,
+        echo: server,
         host,
         port,
     };
 
     suite.beforeEach(async () => {
         const connectionPromise = server.events.newConnection.once();
-        await server.listen();
+        await server.start();
         container.netLink = new NetLinkSocketClientTCP(host, port);
         await connectionPromise;
     });
@@ -89,7 +89,7 @@ export const setupTestingForClientTCP: TestingSetupFunction<
         const disconnectPromise = server.events.closedConnection.once();
         container.netLink.disconnect();
         await disconnectPromise;
-        await server.close();
+        await server.stop();
     });
 
     return container;

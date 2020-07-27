@@ -1,61 +1,59 @@
 /// <reference types="node" />
 
 export declare abstract class NetLinkSocketBase<
-    TProtocal extends "TCP" | "UDP" | undefined = undefined,
-    TType extends "server" | "client" | undefined = undefined
+    TProtocal extends "TCP" | "UDP" | undefined = undefined
 > {
     disconnect(): void;
-    getHostTo(): string;
-    getHostFrom(): string;
-    getPortTo(): number;
+
     getPortFrom(): number;
-    getSocketHandler(): number;
+
     isBlocking(): boolean;
-    isClient(): TType extends "client"
-        ? true
-        : TType extends "server"
-        ? false
-        : boolean;
+    setBlocking(blocking: boolean): void;
+
     isIPv4(): boolean;
     isIPv6(): boolean;
-    isServer(): TType extends "server"
-        ? true
-        : TType extends "client"
-        ? false
-        : boolean;
+
     isTCP(): TProtocal extends "TCP"
         ? true
-        : TType extends "UDP"
+        : TProtocal extends "UDP"
         ? false
         : boolean;
     isUDP(): TProtocal extends "UDP"
         ? true
-        : TType extends "TCP"
+        : TProtocal extends "TCP"
         ? false
         : boolean;
-    setBlocking(blocking: boolean): void;
 }
 
-// -- Clients -- \\
-
-declare class NetLinkSocketClient<
-    TProtocal extends "TCP" | "UDP"
-> extends NetLinkSocketBase<TProtocal, "client"> {
+export declare class NetLinkSocketClientTCP extends NetLinkSocketBase<"TCP"> {
     constructor(hostTo: string, portTo: number, ipVersion?: "IPv4" | "IPv6");
 
-    read(): Buffer | undefined;
-    write(data: string | Uint8Array | Buffer): void;
-    getNextReadSize(): number;
+    getHostTo(): string;
+    getPortTo(): number;
+
+    receive(): Buffer | undefined;
+    send(data: string | Uint8Array | Buffer): void;
+
+    isServer(): false;
+    isClient(): true;
 }
 
-export declare class NetLinkSocketClientTCP extends NetLinkSocketClient<
-    "TCP"
-> {}
+export declare class NetLinkSocketServerTCP extends NetLinkSocketBase<"TCP"> {
+    constructor(
+        portFrom: number,
+        hostFrom?: string,
+        ipVersion?: "IPv4" | "IPv6",
+    );
 
-export declare class NetLinkSocketClientUDP extends NetLinkSocketClient<
-    "UDP"
-> {
-    constructor(hostTo: string, portTo: number, ipVersion?: "IPv4" | "IPv6");
+    getHostFrom(): string;
+
+    isServer(): true;
+    isClient(): false;
+
+    accept(): NetLinkSocketClientTCP | undefined;
+}
+
+export declare class NetLinkSocketUDP extends NetLinkSocketBase<"UDP"> {
     constructor(
         hostTo: string,
         portTo: number,
@@ -63,38 +61,17 @@ export declare class NetLinkSocketClientUDP extends NetLinkSocketClient<
         ipVersion?: "IPv4" | "IPv6",
     );
 
-    writeTo(
+    getHostTo(): string;
+    getHostFrom(): string;
+    getPortTo(): number;
+
+    receive(): Buffer | undefined;
+    receiveFrom(): { host: string; port: number; data: Buffer } | undefined;
+
+    send(data: string | Uint8Array | Buffer): void;
+    sendTo(
         hostTo: string,
         portTo: number,
         data: string | Uint8Array | Buffer,
     ): void;
-    readFrom(): {
-        host: string;
-        port: number;
-        data: Buffer;
-    };
 }
-
-// -- Servers -- \\
-
-declare class NetLinkSocketServer<
-    TProtocal extends "TCP" | "UDP"
-> extends NetLinkSocketBase<TProtocal, "server"> {
-    constructor(
-        portFrom: number,
-        hostFrom?: string,
-        ipVersion?: "IPv4" | "IPv6",
-        listenQueue?: number | undefined,
-    );
-}
-
-export declare class NetLinkSocketServerTCP extends NetLinkSocketServer<
-    "TCP"
-> {
-    accept(): NetLinkSocketClientTCP;
-    getListenQueue(): number;
-}
-
-export declare class NetLinkSocketServerUDP extends NetLinkSocketServer<
-    "UDP"
-> {}

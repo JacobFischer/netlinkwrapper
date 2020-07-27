@@ -7,18 +7,18 @@ describe("TCP client specific functionality", function () {
     const testing = setupTestingForClientTCP(this);
 
     it("can register as a TCP listener", async function () {
-        const connectionPromise = testing.server.events.newConnection.once();
-        const preConnectionCount = await testing.server.countConnections();
+        const connectionPromise = testing.echo.events.newConnection.once();
+        const preConnectionCount = await testing.echo.countConnections();
         expect(preConnectionCount).to.equal(1);
 
         const tcp = new NetLinkSocketClientTCP(testing.host, testing.port);
         const listener = await connectionPromise;
         expect(listener).to.be.instanceOf(Socket);
 
-        const postConnectionCount = await testing.server.countConnections();
+        const postConnectionCount = await testing.echo.countConnections();
         expect(postConnectionCount).to.equal(2); // TODO: disconnect testing.netLink before this
 
-        const disconnectPromise = testing.server.events.closedConnection.once();
+        const disconnectPromise = testing.echo.events.closedConnection.once();
         tcp.disconnect();
         const disconnected = await disconnectPromise;
         expect(disconnected.from).to.equal(listener);
