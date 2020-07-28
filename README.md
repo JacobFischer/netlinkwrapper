@@ -7,7 +7,7 @@ that only works synchronously, as opposed to Node's asynchronous paradigm.
 
 ## Purpose
 
-Obviously node's net module is far more suited for TCP communications that
+Obviously node's net module is far more suited for TCP/UDP communications that
 this module. However, the net module can only work asynchronously, as is
 Node's design. However if you are in the **very** rare situation where you
 need synchronous reading of sockets across platforms then this may suit you.
@@ -16,7 +16,9 @@ need synchronous reading of sockets across platforms then this may suit you.
 
 As with most node modules, use npm to install it for you.
 
-`npm install`
+```
+npm install netlinkwrapper
+```
 
 *Note*: [node-gyp] is a dependency.
 
@@ -28,22 +30,32 @@ On Windows make sure you have the WIndows Build Tools installed
 (for ws2_32.lib). The most common way to attain these build tools is to just
 install [Visual Studio 2013].
 
-## Example
+## Examples
 
-```javascript
-const netlinkwrapper = require('netlinkwrapper');
+### TCP
 
-const netlink = new netlinkwrapper();
+```js
+const { NetLinkSocketClientTCP, NetLinkSocketServerTCP } = require('netlinkwrapper');
 
-netlink.connect(3000, 'localhost');
-netlink.blocking(false);
+const port = 33333;
+const server = new NetLinkSocketServerTCP(port);
+const client = new NetLinkSocketClientTCP('localhost', port);
 
-netlink.write('Are we human, or are we dancer?');
+const serverSends = 'hello world!';
+const serversClient = server.accept();
+serversClient.send(serverSends);
 
-while (true) {
-  const str = netlink.read(1024);
-  console.log('read: ', str);
-}
+const clientReceived = client.receive();
+
+const identical = serverSends ==== clientReceived.toString(); // should be true
+
+console.log('the two strings are identical?', identical);
+```
+
+### UDP
+
+```js
+// TODO: do
 ```
 
 ## Docs
@@ -53,13 +65,9 @@ Docs can be found online at [GitHub][docs].
 ## Alternatives
 
 If you are looking for similar functionality, but **without** the node-gyp
-dependency I have made a similar (but much slower) module, [SyncSocket].
+dependency I have made a similar (but **much** slower) module, [SyncSocket].
 
-## Why the old version, and why that library
-
-Because it was the easiest for me to get working and met my needs.
-
-[netlink]: https://github.com/Lichtso/netLink
+[netlink]: http://netlinksockets.sourceforge.net/
 [node-gyp]: https://github.com/nodejs/node-gyp
 [Visual Studio 2013]: https://www.visualstudio.com/downloads/download-visual-studio-vs
 [docs]: https://jacobfischer.github.io/netlinkwrapper/

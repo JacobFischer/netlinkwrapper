@@ -50,6 +50,16 @@ describe("base sockets", function () {
                 expect(typeof checked).to.equal("boolean");
                 expect(checked).to.equal(!isTCP);
             });
+
+            it("can disconnect", function () {
+                testing.netLink.disconnect();
+            });
+
+            it("can check isDestroyed", function () {
+                expect(testing.netLink.isDestroyed()).to.be.false;
+                testing.netLink.disconnect();
+                expect(testing.netLink.isDestroyed()).to.be.true;
+            });
         });
     }
 });

@@ -93,7 +93,9 @@ export const setupTestingForUDP: TestingSetupFunction<
         container.netLink = new NetLinkSocketUDP(host, port);
     });
     suite.afterEach(async () => {
-        container.netLink.disconnect();
+        if (!container.netLink.isDestroyed()) {
+            container.netLink.disconnect();
+        }
         await echo.stop();
     });
 

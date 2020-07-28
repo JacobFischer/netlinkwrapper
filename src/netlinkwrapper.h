@@ -36,6 +36,7 @@ private:
     static void get_port_to(const v8::FunctionCallbackInfo<v8::Value> &args);
     static void is_blocking(const v8::FunctionCallbackInfo<v8::Value> &args);
     static void is_client(const v8::FunctionCallbackInfo<v8::Value> &args);
+    static void is_destroyed(const v8::FunctionCallbackInfo<v8::Value> &args);
     static void is_ipv4(const v8::FunctionCallbackInfo<v8::Value> &args);
     static void is_ipv6(const v8::FunctionCallbackInfo<v8::Value> &args);
     static void is_server(const v8::FunctionCallbackInfo<v8::Value> &args);

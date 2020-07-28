@@ -86,8 +86,13 @@ export const setupTestingForClientTCP: TestingSetupFunction<
     });
 
     suite.afterEach(async () => {
-        const disconnectPromise = server.events.closedConnection.once();
-        container.netLink.disconnect();
+        const hasConnections = (await server.countConnections()) > 0;
+        const disconnectPromise =
+            hasConnections && server.events.closedConnection.once();
+
+        if (!container.netLink.isDestroyed()) {
+            container.netLink.disconnect();
+        }
         await disconnectPromise;
         await server.stop();
     });

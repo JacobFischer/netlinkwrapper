@@ -23,6 +23,8 @@ export declare abstract class NetLinkSocketBase<
         : TProtocal extends "TCP"
         ? false
         : boolean;
+
+    isDestroyed(): boolean;
 }
 
 export declare class NetLinkSocketClientTCP extends NetLinkSocketBase<"TCP"> {

@@ -19,9 +19,16 @@ export class EchoClientTCP extends EchoSocket<AddressInfo> {
                 if (typeof address === "string") {
                     throw new Error("Running on too old a Node version!");
                 }
-                this.events.sentData.emit({
-                    from: address,
-                    data: data.toString(),
+                this.events.newConnection.emit(address);
+                this.socket.write(data, () => {
+                    this.events.sentData.emit({
+                        from: address,
+                        data: data.toString(),
+                    });
+                    this.events.closedConnection.emit({
+                        from: address,
+                        hadError: false,
+                    });
                 });
             });
             this.socket.connect(this.port, String(host), () => {
@@ -62,7 +69,9 @@ export const setupTestingForServerTCP: TestingSetupFunction<
 
     suite.afterEach(async () => {
         await container.echo.stop();
-        container.netLink.disconnect();
+        if (!container.netLink.isDestroyed()) {
+            container.netLink.disconnect();
+        }
     });
 
     return container;

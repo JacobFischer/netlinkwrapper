@@ -32,49 +32,65 @@ void NetLinkWrapper::init(v8::Local<v8::Object> exports)
 
     // https://stackoverflow.com/questions/28076382/v8-inherited-functiontemplate-not-getting-updates-to-the-parent-functiontemplate
 
+    // -- Base --
     auto name_base = Nan::New("NetLinkSocketBase").ToLocalChecked();
     auto base_template = v8::FunctionTemplate::New(isolate, new_base);
     base_template->SetClassName(name_base);
     base_template->InstanceTemplate()->SetInternalFieldCount(1);
 
-    // Prototype
-    NODE_SET_PROTOTYPE_METHOD(base_template, "accept", accept);
     NODE_SET_PROTOTYPE_METHOD(base_template, "disconnect", disconnect);
-    NODE_SET_PROTOTYPE_METHOD(base_template, "getHostFrom", get_host_from);
-    NODE_SET_PROTOTYPE_METHOD(base_template, "getHostTo", get_host_to);
     NODE_SET_PROTOTYPE_METHOD(base_template, "getPortFrom", get_port_from);
-    NODE_SET_PROTOTYPE_METHOD(base_template, "getPortTo", get_port_to);
     NODE_SET_PROTOTYPE_METHOD(base_template, "isBlocking", is_blocking);
-    NODE_SET_PROTOTYPE_METHOD(base_template, "isClient", is_client);
+    NODE_SET_PROTOTYPE_METHOD(base_template, "isDestroyed", is_destroyed);
     NODE_SET_PROTOTYPE_METHOD(base_template, "isIPv4", is_ipv4);
     NODE_SET_PROTOTYPE_METHOD(base_template, "isIPv6", is_ipv6);
-    NODE_SET_PROTOTYPE_METHOD(base_template, "isServer", is_server);
     NODE_SET_PROTOTYPE_METHOD(base_template, "isTCP", is_tcp);
     NODE_SET_PROTOTYPE_METHOD(base_template, "isUDP", is_udp);
-    NODE_SET_PROTOTYPE_METHOD(base_template, "receive", receive);
-    NODE_SET_PROTOTYPE_METHOD(base_template, "receiveFrom", receive_from);
     NODE_SET_PROTOTYPE_METHOD(base_template, "setBlocking", set_blocking);
-    NODE_SET_PROTOTYPE_METHOD(base_template, "send", send);
-    NODE_SET_PROTOTYPE_METHOD(base_template, "sendTo", send_to);
 
+    // -- TCP Client --
     auto name_tcp_client = Nan::New("NetLinkSocketClientTCP").ToLocalChecked();
     auto tcp_client_template = v8::FunctionTemplate::New(isolate, new_tcp_client);
     tcp_client_template->SetClassName(name_tcp_client);
     tcp_client_template->InstanceTemplate()->SetInternalFieldCount(1);
     tcp_client_template->Inherit(base_template);
 
-    auto name_udp = Nan::New("NetLinkSocketUDP").ToLocalChecked();
-    auto udp_template = v8::FunctionTemplate::New(isolate, new_udp);
-    udp_template->SetClassName(name_udp);
-    udp_template->InstanceTemplate()->SetInternalFieldCount(1);
-    udp_template->Inherit(base_template);
+    NODE_SET_PROTOTYPE_METHOD(base_template, "getHostTo", get_host_to);
+    NODE_SET_PROTOTYPE_METHOD(base_template, "getPortTo", get_port_to);
+    NODE_SET_PROTOTYPE_METHOD(base_template, "isClient", is_client);
+    NODE_SET_PROTOTYPE_METHOD(base_template, "isServer", is_server);
+    NODE_SET_PROTOTYPE_METHOD(base_template, "receive", receive);
+    NODE_SET_PROTOTYPE_METHOD(base_template, "send", send);
 
+    // -- TCP Server --
     auto name_tcp_server = Nan::New("NetLinkSocketServerTCP").ToLocalChecked();
     auto tcp_server_template = v8::FunctionTemplate::New(isolate, new_tcp_server);
     tcp_server_template->SetClassName(name_tcp_server);
     tcp_server_template->InstanceTemplate()->SetInternalFieldCount(1);
     tcp_server_template->Inherit(base_template);
 
+    NODE_SET_PROTOTYPE_METHOD(base_template, "accept", accept);
+    NODE_SET_PROTOTYPE_METHOD(base_template, "getHostFrom", get_host_from);
+    NODE_SET_PROTOTYPE_METHOD(base_template, "isClient", is_client);
+    NODE_SET_PROTOTYPE_METHOD(base_template, "isServer", is_server);
+
+    // -- UDP --
+    auto name_udp = Nan::New("NetLinkSocketUDP").ToLocalChecked();
+    auto udp_template = v8::FunctionTemplate::New(isolate, new_udp);
+    udp_template->SetClassName(name_udp);
+    udp_template->InstanceTemplate()->SetInternalFieldCount(1);
+    udp_template->Inherit(base_template);
+
+    NODE_SET_PROTOTYPE_METHOD(base_template, "getHostFrom", get_host_from);
+    NODE_SET_PROTOTYPE_METHOD(base_template, "getHostTo", get_host_to);
+    NODE_SET_PROTOTYPE_METHOD(base_template, "getPortTo", get_port_to);
+    NODE_SET_PROTOTYPE_METHOD(base_template, "receive", receive);
+    NODE_SET_PROTOTYPE_METHOD(base_template, "receiveFrom", receive_from);
+    NODE_SET_PROTOTYPE_METHOD(base_template, "setBlocking", set_blocking);
+    NODE_SET_PROTOTYPE_METHOD(base_template, "send", send);
+    NODE_SET_PROTOTYPE_METHOD(base_template, "sendTo", send_to);
+
+    // Actually expose them to our module's exports
     Nan::Set(exports, name_base, Nan::GetFunction(base_template).ToLocalChecked());
     Nan::Set(exports, name_tcp_client, Nan::GetFunction(tcp_client_template).ToLocalChecked());
     Nan::Set(exports, name_tcp_server, Nan::GetFunction(tcp_server_template).ToLocalChecked());
@@ -517,6 +533,14 @@ void NetLinkWrapper::is_client(const v8::FunctionCallbackInfo<v8::Value> &args)
         isolate->ThrowException(v8::Exception::Error(Nan::New(e.what()).ToLocalChecked()));
         return;
     }
+}
+
+void NetLinkWrapper::is_destroyed(const v8::FunctionCallbackInfo<v8::Value> &args)
+{
+    auto obj = ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
+    auto v8_bool = Nan::New(obj->destroyed);
+
+    args.GetReturnValue().Set(v8_bool);
 }
 
 void NetLinkWrapper::is_ipv4(const v8::FunctionCallbackInfo<v8::Value> &args)
