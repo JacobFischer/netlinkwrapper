@@ -14,16 +14,17 @@ export class EchoClientTCP extends EchoSocket<AddressInfo> {
     public start(host?: string): Promise<void> {
         return new Promise((resolve) => {
             this.socket = new SocketTCP();
-            this.socket.on("data", (data) => {
+            this.socket.on("data", (buffer) => {
                 const address = this.socket.address();
                 if (typeof address === "string") {
                     throw new Error("Running on too old a Node version!");
                 }
                 this.events.newConnection.emit(address);
-                this.socket.write(data, () => {
+                this.socket.write(buffer, () => {
                     this.events.sentData.emit({
                         from: address,
-                        data: data.toString(),
+                        buffer,
+                        str: buffer.toString(),
                     });
                     this.events.closedConnection.emit({
                         from: address,
@@ -44,6 +45,14 @@ export class EchoClientTCP extends EchoSocket<AddressInfo> {
         });
     }
 }
+
+/*
+export const setupTestingForServerTCP = createTestUtil(
+    (host, port) => new NetLinkSocketServerTCP(port, host),
+    (_, port) => new EchoServerTCP(port),
+    true,
+);
+*/
 
 export const setupTestingForServerTCP: TestingSetupFunction<
     NetLinkSocketServerTCP,

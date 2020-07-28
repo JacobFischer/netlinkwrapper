@@ -25,10 +25,9 @@ export class EchoServerTCP extends EchoSocket<SocketTCP> {
 
             // echo all data back
             socket.on("data", (buffer) => {
-                const data = buffer.toString();
-                // console.log("ECHO", data.toString());
-                this.events.sentData.emit({ from: socket, data });
-                socket.write(data);
+                const str = buffer.toString();
+                this.events.sentData.emit({ from: socket, buffer, str });
+                socket.write(buffer);
             });
         });
     }
@@ -63,6 +62,13 @@ export class EchoServerTCP extends EchoSocket<SocketTCP> {
         });
     }
 }
+
+/*
+export const setupTestingForClientTCP = createTestUtil(
+    (host, port) => new NetLinkSocketClientTCP(host, port),
+    (_, port) => new EchoServerTCP(port),
+);
+*/
 
 export const setupTestingForClientTCP: TestingSetupFunction<
     NetLinkSocketClientTCP,

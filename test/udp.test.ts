@@ -5,13 +5,14 @@ import { expect } from "chai";
 describe("UDP client specific functionality", function () {
     const testing = setupTestingForUDP(this);
 
-    it("can be constructed with portTo set", async function () {
+    it("can be constructed with portFrom set", async function () {
         const sibling = testing.netLink;
         const portFrom = sibling.getPortFrom() + 100;
         expect(portFrom).not.to.equal(sibling.getPortFrom());
         expect(portFrom).not.to.equal(sibling.getPortTo());
 
         const udp = new NetLinkSocketUDP(testing.host, testing.port, portFrom);
+        expect(udp.getPortFrom()).to.equal(portFrom);
 
         const testingString = `My port should be from: ${portFrom}`;
         const onceSent = testing.echo.events.sentData.once();
@@ -19,10 +20,10 @@ describe("UDP client specific functionality", function () {
         const sent = await onceSent;
 
         expect(sent.from.port).to.equal(portFrom);
-        expect(sent.data.toString()).to.equal(testingString);
+        expect(sent.str).to.equal(testingString);
     });
 
-    it("can readFrom other UDP sockets", async function () {
+    it("can receiveFrom other UDP sockets", async function () {
         const sentPromise = testing.echo.events.sentData.once();
         const testingString = "You should ask Oma.";
         testing.netLink.send(testingString);
@@ -39,23 +40,32 @@ describe("UDP client specific functionality", function () {
         }
     });
 
-    it("can readFrom nothing", function () {
+    it("can receiveFrom nothing", function () {
         testing.netLink.setBlocking(false);
         const readFromNothing = testing.netLink.receiveFrom();
         expect(readFromNothing).to.be.undefined;
     });
 
-    it("can writeTo other UDP sockets", async function () {
+    it("can sendTo other UDP sockets", async function () {
         const sentPromise = testing.echo.events.sentData.once();
         const testingString = "Indeed";
         testing.netLink.sendTo(testing.host, testing.port, testingString);
         const sent = await sentPromise;
 
         expect(sent.from.port).to.equal(testing.netLink.getPortFrom());
-        expect(sent.data).to.equal(testingString);
+        expect(sent.str).to.equal(testingString);
     });
 
-    it("can writeTo nothing", function () {
+    it("can sendTo with Buffers", async function () {
+        const sentPromise = testing.echo.events.sentData.once();
+        const buffer = Buffer.from("its quirks and features");
+        testing.netLink.sendTo(testing.host, testing.port, buffer);
+        const sent = await sentPromise;
+
+        expect(sent.buffer.compare(buffer)).to.equal(0);
+    });
+
+    it("can sendTo nothing", function () {
         expect(() =>
             testing.netLink.sendTo(
                 "192.0.2.0", // invalid via RFC 5737

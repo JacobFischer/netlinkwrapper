@@ -6,6 +6,7 @@ const expectedNetLinkSocketBase = [
     "disconnect",
     "getPortFrom",
     "isBlocking",
+    "isDestroyed",
     "isIPv4",
     "isIPv6",
     "isTCP",
@@ -21,6 +22,25 @@ const expectedNetLinkSocketClientTCP = [
     "send",
     "isClient",
     "isServer",
+] as const;
+
+const expectedNetLinkSocketServerTCP = [
+    ...expectedNetLinkSocketBase,
+    "accept",
+    "getHostFrom",
+    "isClient",
+    "isServer",
+] as const;
+
+const expectedNetLinkSocketUDP = [
+    ...expectedNetLinkSocketBase,
+    "getPortTo",
+    "getHostFrom",
+    "getHostTo",
+    "receive",
+    "receiveFrom",
+    "send",
+    "sendTo",
 ] as const;
 
 const expectedShapes = {
@@ -51,6 +71,18 @@ describe("module", function () {
         expectType<
             TypeEqual<TCPClientTestingFunctions, TCPClientActualFunctions>
         >(true);
+
+        type TCPServerTestingFunctions = ToUnion<
+            typeof expectedNetLinkSocketServerTCP
+        >;
+        type TCPServerActualFunctions = keyof typeof module["NetLinkSocketServerTCP"]["prototype"];
+        expectType<
+            TypeEqual<TCPServerTestingFunctions, TCPServerActualFunctions>
+        >(true);
+
+        type UDPTestingFunctions = ToUnion<typeof expectedNetLinkSocketUDP>;
+        type UDPActualFunctions = keyof typeof module["NetLinkSocketUDP"]["prototype"];
+        expectType<TypeEqual<UDPTestingFunctions, UDPActualFunctions>>(true);
     });
 
     describe("exports the correct shapes", function () {

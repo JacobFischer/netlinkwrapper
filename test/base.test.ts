@@ -2,6 +2,8 @@ import { NetLinkSocketBase } from "../lib";
 import { setups } from "./utils";
 import { expect } from "chai";
 
+const setupsList = [setups.tcpClient, setups.tcpServer, setups.udp];
+
 describe("base sockets", function () {
     it("cannot be constructed as a base class.", function () {
         expect(() => {
@@ -10,10 +12,10 @@ describe("base sockets", function () {
         }).to.throw();
     });
 
-    for (const { setup, isClient, isTCP } of setups) {
-        const protocal = isTCP ? "TCP" : "UDP";
+    for (const { setup, isClient, isTCP } of setupsList) {
+        const protocol = isTCP ? "TCP" : "UDP";
         const socketType = isClient ? "Client" : "Server";
-        const description = `${protocal} ${socketType} base functionality`;
+        const description = `${protocol} ${socketType} base functionality`;
 
         describe(description, function () {
             const testing = setup(this);
@@ -36,7 +38,7 @@ describe("base sockets", function () {
             it("can get portFrom", function () {
                 const portFrom = testing.netLink.getPortFrom();
                 expect(typeof portFrom).to.equal("number");
-                // can't gaurntee portFrom is bound to a specific number for
+                // can't guarantee portFrom is bound to a specific number for
             });
 
             it("can check isTCP", function () {

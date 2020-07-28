@@ -780,10 +780,16 @@ void NetLinkWrapper::send(const v8::FunctionCallbackInfo<v8::Value> &args)
     if (valid)
     {
         auto arg = args[0];
-        if (arg->IsString() || arg->IsUint8Array())
+        if (arg->IsString())
         {
             Nan::Utf8String param1(arg);
             writing = std::string(*param1);
+        }
+        else if (arg->IsUint8Array())
+        {
+            auto typed_array = arg.As<v8::TypedArray>();
+            Nan::TypedArrayContents<char> contents(typed_array);
+            writing = std::string(*contents, contents.length());
         }
         else if (node::Buffer::HasInstance(arg))
         {
@@ -842,10 +848,16 @@ void NetLinkWrapper::send_to(const v8::FunctionCallbackInfo<v8::Value> &args)
         port = static_cast<int>(as_number);
 
         auto arg_data = args[2];
-        if (arg_data->IsString() || arg_data->IsUint8Array())
+        if (arg_data->IsString())
         {
             Nan::Utf8String param1(arg_data);
             writing = std::string(*param1);
+        }
+        else if (arg_data->IsUint8Array())
+        {
+            auto typed_array = arg_data.As<v8::TypedArray>();
+            Nan::TypedArrayContents<char> contents(typed_array);
+            writing = std::string(*contents, contents.length());
         }
         else if (node::Buffer::HasInstance(arg_data))
         {

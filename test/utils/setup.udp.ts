@@ -4,7 +4,7 @@ import { EchoSocket } from "./echo-socket";
 import { TestingSetupFunction } from "./setup";
 import { NetLinkSocketUDP } from "../../lib";
 
-// upd6 will accept IPv4/6 conenctions so it is ideal for testing with
+// upd6 will accept IPv4/6 connections so it is ideal for testing with
 const newUDP = () => createSocket({ type: "udp6" });
 
 export class EchoUDP extends EchoSocket<RemoteInfo> {
@@ -21,16 +21,14 @@ export class EchoUDP extends EchoSocket<RemoteInfo> {
             this.socket = newUDP();
 
             // eslint-disable-next-line @typescript-eslint/no-misused-promises
-            this.socket.on("message", async (message, remote) => {
+            this.socket.on("message", async (buffer, remote) => {
                 // UDP does not form true connections, so we will "fake" it
-                const data = message.toString();
-
                 this.events.newConnection.emit(remote);
 
                 // echo it back
                 await new Promise((res, rej) =>
                     this.socket.send(
-                        data,
+                        buffer,
                         remote.port,
                         remote.address,
                         (err, val) => {
@@ -45,7 +43,8 @@ export class EchoUDP extends EchoSocket<RemoteInfo> {
 
                 this.events.sentData.emit({
                     from: remote,
-                    data,
+                    buffer,
+                    str: buffer.toString(),
                 });
 
                 this.events.closedConnection.emit({
@@ -66,13 +65,14 @@ export class EchoUDP extends EchoSocket<RemoteInfo> {
             });
         });
     }
-
-    public countConnections(): Promise<number> {
-        return new Promise((resolve) => {
-            resolve(0); // UDP does not have true connections
-        });
-    }
 }
+
+/*
+export const setupTestingForUDP = createTestUtil(
+    (host, port) => new NetLinkSocketUDP(host, port),
+    (_, port) => new EchoUDP(port),
+);
+*/
 
 export const setupTestingForUDP: TestingSetupFunction<
     NetLinkSocketUDP,

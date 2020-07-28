@@ -10,7 +10,8 @@ export abstract class EchoSocket<T = any> {
         }>(),
         sentData: new Event<{
             from: T;
-            data: string;
+            buffer: Buffer;
+            str: string;
         }>(),
     });
 

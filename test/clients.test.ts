@@ -1,14 +1,21 @@
 import { expect } from "chai";
 import { fork } from "child_process";
 import { join, resolve } from "path";
-import { testingClients } from "./utils";
+import { setups } from "./utils";
 import { NetLinkSocketClientTCP, NetLinkSocketUDP } from "../lib";
+import { TextEncoder } from "util";
+
+const clientSetups = [setups.tcpClient, setups.udp];
 
 describe("clients shared functionality", function () {
-    for (const { setup, isTCP } of testingClients) {
+    for (const { setup, isTCP } of clientSetups) {
         const testType = isTCP ? "TCP" : "UDP";
         describe(`${testType} client`, function () {
             const testing = setup(this);
+
+            it("exists", function () {
+                expect(testing.netLink).to.exist;
+            });
 
             it("can read and write strings", async function () {
                 const dataPromise = testing.echo.events.sentData.once();
@@ -16,12 +23,37 @@ describe("clients shared functionality", function () {
                 const sending = "Make it so number one.";
                 testing.netLink.send(sending);
                 const sent = await dataPromise;
-                const sentString = sent.data.toString();
-                expect(sentString).to.equal(sending); // should be echoed back
+                expect(sent.str).to.equal(sending); // should be echoed back
 
                 const read = testing.netLink.receive();
                 expect(read).to.be.instanceOf(Buffer);
-                expect(read?.toString()).to.equal(sentString);
+                expect(read?.compare(sent.buffer)).to.equal(0);
+            });
+
+            it("can send Buffers", async function () {
+                const dataPromise = testing.echo.events.sentData.once();
+
+                const buffer = Buffer.from("I hate these bugs.");
+                testing.netLink.send(buffer);
+                const sent = await dataPromise;
+                expect(sent.buffer.compare(buffer)).to.equal(0); // should be echoed back
+
+                const read = testing.netLink.receive();
+                expect(read?.compare(buffer)).to.equal(0);
+            });
+
+            it("can send Uint8Arrays", async function () {
+                const dataPromise = testing.echo.events.sentData.once();
+
+                const text = "Would you like some tea?";
+                const textEncoder = new TextEncoder();
+                const uint8array = textEncoder.encode(text);
+                testing.netLink.send(uint8array);
+                const sent = await dataPromise;
+                expect(sent.str).to.equal(text); // should be echoed back
+
+                const read = testing.netLink.receive();
+                expect(read?.toString()).to.equal(text);
             });
 
             it("can do non blocking reads", function () {
@@ -32,13 +64,14 @@ describe("clients shared functionality", function () {
             });
 
             it("can do blocking reads", async function () {
-                this.timeout(10_000); // slow because child process need ts-node transpiling on the fly
+                // Slow because child process need ts-node transpiling on the fly
+                this.timeout(10_000);
 
                 const testString = "Hello worker thread!";
                 const newConnectionPromise = testing.echo.events.newConnection.once();
                 const sentDataPromise = testing.echo.events.sentData.once();
                 const disconnectedPromise = testing.echo.events.closedConnection.once();
-                // unlike other tests, the netlink tests are all in the worker code
+                // unlike other tests, the netLink tests are all in the worker code
                 const workerPath = resolve(
                     join(__dirname, "./client.worker.ts"),
                 );
@@ -54,8 +87,8 @@ describe("clients shared functionality", function () {
                 await newConnectionPromise;
                 const sent = await sentDataPromise;
 
-                expect(sent.data).to.exist;
-                expect(sent.data && sent.data.toString()).to.equal(testString);
+                expect(sent.str).to.exist;
+                expect(sent.str).to.equal(testString);
 
                 await disconnectedPromise;
 
@@ -73,6 +106,16 @@ describe("clients shared functionality", function () {
                     }),
                 );
                 expect(code).to.equal(0);
+            });
+
+            it("can get host/port to", function () {
+                const hostTo = testing.netLink.getHostTo();
+                expect(typeof hostTo).to.equal("string");
+                expect(hostTo).to.equal(testing.host);
+
+                const portTo = testing.netLink.getPortTo();
+                expect(typeof portTo).to.equal("number");
+                expect(portTo).to.equal(testing.port);
             });
 
             it("can be IPv6", async function () {
