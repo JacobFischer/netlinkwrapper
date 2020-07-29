@@ -1,3 +1,4 @@
+import { BaseContainer } from "./hash";
 import { Event, events } from "ts-typed-events";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -15,10 +16,6 @@ export abstract class EchoSocket<T = any> {
         }>(),
     });
 
-    constructor(public readonly port: number) {
-        // pass
-    }
-
-    public abstract start(): Promise<void>;
+    public abstract start(data: BaseContainer): Promise<void>;
     public abstract stop(): Promise<void>;
 }

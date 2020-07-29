@@ -1,5 +1,5 @@
-export * from "./address";
 export * from "./echo-socket";
+export * from "./hash";
 export * from "./setup";
 export * from "./setup.tcp-client";
 export * from "./setup.tcp-server";

@@ -1,5 +1,5 @@
-import { createSocket, RemoteInfo, Socket } from "dgram";
-import { testingAddress } from "./address";
+import { createSocket, RemoteInfo } from "dgram";
+import { BaseContainer, hashTestingDataInto, newContainer } from "./hash";
 import { EchoSocket } from "./echo-socket";
 import { TestingSetupFunction } from "./setup";
 import { NetLinkSocketUDP } from "../../lib";
@@ -8,18 +8,10 @@ import { NetLinkSocketUDP } from "../../lib";
 const newUDP = () => createSocket({ type: "udp6" });
 
 export class EchoUDP extends EchoSocket<RemoteInfo> {
-    private socket: Socket;
+    private socket = newUDP();
 
-    constructor(port: number) {
-        super(port);
-
-        this.socket = newUDP();
-    }
-
-    public start(): Promise<void> {
+    public start(data: BaseContainer): Promise<void> {
         return new Promise((resolve) => {
-            this.socket = newUDP();
-
             // eslint-disable-next-line @typescript-eslint/no-misused-promises
             this.socket.on("message", async (buffer, remote) => {
                 // UDP does not form true connections, so we will "fake" it
@@ -53,7 +45,7 @@ export class EchoUDP extends EchoSocket<RemoteInfo> {
                 });
             });
 
-            this.socket.bind(this.port, resolve);
+            this.socket.bind(data.port, resolve);
         });
     }
 
@@ -78,25 +70,24 @@ export const setupTestingForUDP: TestingSetupFunction<
     NetLinkSocketUDP,
     EchoUDP
 > = (suite) => {
-    const [host, port] = testingAddress(suite.fullTitle());
-    const echo = new EchoUDP(port);
-
-    const container = {
+    const container = newContainer({
         netLink: (null as unknown) as NetLinkSocketUDP,
-        echo,
-        host,
-        port,
-    };
+        echo: new EchoUDP(),
+    });
 
-    suite.beforeEach(async () => {
-        await echo.start();
-        container.netLink = new NetLinkSocketUDP(host, port);
+    suite.beforeEach(async function () {
+        hashTestingDataInto(this, container);
+        await container.echo.start(container);
+        container.netLink = new NetLinkSocketUDP(
+            container.host,
+            container.port,
+        );
     });
     suite.afterEach(async () => {
         if (!container.netLink.isDestroyed()) {
             container.netLink.disconnect();
         }
-        await echo.stop();
+        await container.echo.stop();
     });
 
     return container;

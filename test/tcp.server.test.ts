@@ -20,7 +20,7 @@ describe("TCP Server functionality", function () {
         expect(client).to.exist;
         expect(client).to.be.an.instanceOf(NetLinkSocketClientTCP);
 
-        expect(client?.getPortFrom()).to.equal(testing.echo.port);
+        expect(client?.getPortFrom()).to.equal(testing.port);
 
         client?.disconnect();
     });
@@ -33,16 +33,14 @@ describe("TCP Server functionality", function () {
             throw new Error("client should exist");
         }
 
-        const testingString = "Hello dear client";
         const sentData = testing.echo.events.sentData.once();
         client.setBlocking(false);
         expect(client.receive()).to.be.undefined;
-        client.send(testingString);
+        client.send(testing.str);
         const sent = await sentData;
-        expect(sent.str).to.equal(testingString);
+        expect(sent.str).to.equal(testing.str);
         const echoed = client.receive();
-        console.log("echoed", echoed?.toString());
-        expect(echoed?.toString()).to.equal(testingString);
+        expect(echoed?.toString()).to.equal(testing.str);
 
         client.disconnect();
     });

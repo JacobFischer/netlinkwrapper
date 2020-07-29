@@ -9,6 +9,7 @@ export type TestingSetup<
     echo: S;
     host: string;
     port: number;
+    str: string;
 };
 
 export type TestingSetupFunction<
@@ -16,17 +17,7 @@ export type TestingSetupFunction<
     S extends EchoSocket | undefined
 > = (suite: Mocha.Suite) => TestingSetup<T, S>;
 
-/**
- * LOL.
- *
- * @param createNetLinkConstr/**
- * LOL.
- *
- * @param createNetLinkConstructor
- * @param createNetLink
- * @param createEchoSocket
- * @param netLinkRequiresEchoer
- * @param netlinkBeforeEcho
+/*
 export const createTestUtil = <
     TNetLinkCreator extends (host: string, port: number) => NetLinkSocketBase,
     TEchoSocketCreator extends (host: string, port: number) => EchoSocket

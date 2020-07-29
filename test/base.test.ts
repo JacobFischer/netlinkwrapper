@@ -1,5 +1,5 @@
 import { NetLinkSocketBase } from "../lib";
-import { setups } from "./utils";
+import { setups, EchoSocket } from "./utils";
 import { expect } from "chai";
 
 const setupsList = [setups.tcpClient, setups.tcpServer, setups.udp];
@@ -22,6 +22,15 @@ describe("base sockets", function () {
 
             it("exists", function () {
                 expect(testing.netLink).to.exist;
+            });
+
+            it("sets up testing data", function () {
+                expect(testing).to.exist;
+                expect(testing.echo).to.be.instanceOf(EchoSocket);
+                expect(testing.netLink).to.be.instanceOf(NetLinkSocketBase);
+                expect(typeof testing.host).to.equal("string");
+                expect(typeof testing.port).to.equal("number");
+                expect(typeof testing.str).to.equal("string");
             });
 
             it("extends NetLinkSocketBase", function () {

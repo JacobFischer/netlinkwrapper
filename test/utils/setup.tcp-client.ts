@@ -1,5 +1,5 @@
 import { createServer, Server, Socket as SocketTCP } from "net";
-import { testingAddress } from "./address";
+import { BaseContainer, hashTestingDataInto, newContainer } from "./hash";
 import { EchoSocket } from "./echo-socket";
 import { TestingSetupFunction } from "./setup";
 import { NetLinkSocketClientTCP } from "../../lib";
@@ -10,15 +10,11 @@ import { NetLinkSocketClientTCP } from "../../lib";
  */
 export class EchoServerTCP extends EchoSocket<SocketTCP> {
     private readonly server: Server;
-    private readonly listeners = new Set<SocketTCP>();
 
-    constructor(port: number) {
-        super(port);
-
+    constructor() {
+        super();
         this.server = createServer((socket) => {
-            this.listeners.add(socket);
             socket.on("close", (hadError) => {
-                this.listeners.delete(socket);
                 this.events.closedConnection.emit({ from: socket, hadError });
             });
             this.events.newConnection.emit(socket);
@@ -32,10 +28,8 @@ export class EchoServerTCP extends EchoSocket<SocketTCP> {
         });
     }
 
-    public start(): Promise<void> {
-        return new Promise((resolve) =>
-            this.server.listen(this.port, resolve),
-        );
+    public start(c: BaseContainer): Promise<void> {
+        return new Promise((resolve) => this.server.listen(c.port, resolve));
     }
 
     public stop(): Promise<void> {
@@ -74,20 +68,21 @@ export const setupTestingForClientTCP: TestingSetupFunction<
     NetLinkSocketClientTCP,
     EchoServerTCP
 > = (suite: Mocha.Suite) => {
-    const [host, port] = testingAddress(suite.fullTitle());
-    const server = new EchoServerTCP(port);
+    const server = new EchoServerTCP();
 
-    const container = {
+    const container = newContainer({
         netLink: (null as unknown) as NetLinkSocketClientTCP,
         echo: server,
-        host,
-        port,
-    };
+    });
 
-    suite.beforeEach(async () => {
+    suite.beforeEach(async function () {
+        hashTestingDataInto(this, container);
         const connectionPromise = server.events.newConnection.once();
-        await server.start();
-        container.netLink = new NetLinkSocketClientTCP(host, port);
+        await server.start(container);
+        container.netLink = new NetLinkSocketClientTCP(
+            container.host,
+            container.port,
+        );
         await connectionPromise;
     });
 

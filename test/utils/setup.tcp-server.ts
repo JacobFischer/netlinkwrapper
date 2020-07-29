@@ -1,5 +1,5 @@
 import { AddressInfo, Socket as SocketTCP } from "net";
-import { testingAddress } from "./address";
+import { BaseContainer, hashTestingDataInto, newContainer } from "./hash";
 import { EchoSocket } from "./echo-socket";
 import { TestingSetupFunction } from "./setup";
 import { NetLinkSocketServerTCP } from "../../lib";
@@ -11,7 +11,7 @@ import { NetLinkSocketServerTCP } from "../../lib";
 export class EchoClientTCP extends EchoSocket<AddressInfo> {
     private socket!: SocketTCP;
 
-    public start(host?: string): Promise<void> {
+    public start(data: BaseContainer): Promise<void> {
         return new Promise((resolve) => {
             this.socket = new SocketTCP();
             this.socket.on("data", (buffer) => {
@@ -32,7 +32,7 @@ export class EchoClientTCP extends EchoSocket<AddressInfo> {
                     });
                 });
             });
-            this.socket.connect(this.port, String(host), () => {
+            this.socket.connect(data.port, data.host, () => {
                 resolve();
             });
         });
@@ -58,22 +58,15 @@ export const setupTestingForServerTCP: TestingSetupFunction<
     NetLinkSocketServerTCP,
     EchoClientTCP
 > = (suite: Mocha.Suite) => {
-    const [host, port] = testingAddress(suite.fullTitle());
-
-    const container = {
+    const container = newContainer({
         netLink: (null as unknown) as NetLinkSocketServerTCP,
-        echo: new EchoClientTCP(port),
-        host,
-        port,
-    };
+        echo: new EchoClientTCP(),
+    });
 
-    suite.beforeEach(async () => {
-        container.netLink = new NetLinkSocketServerTCP(
-            port,
-            undefined,
-            "IPv4", // when set to IPv4 this does not work.
-        );
-        await container.echo.start(host);
+    suite.beforeEach(async function () {
+        hashTestingDataInto(this, container);
+        container.netLink = new NetLinkSocketServerTCP(container.port);
+        await container.echo.start(container);
     });
 
     suite.afterEach(async () => {

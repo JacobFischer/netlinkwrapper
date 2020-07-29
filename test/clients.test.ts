@@ -1,9 +1,9 @@
 import { expect } from "chai";
 import { fork } from "child_process";
 import { join, resolve } from "path";
+import { TextEncoder } from "util";
 import { setups } from "./utils";
 import { NetLinkSocketClientTCP, NetLinkSocketUDP } from "../lib";
-import { TextEncoder } from "util";
 
 const clientSetups = [setups.tcpClient, setups.udp];
 
@@ -19,11 +19,9 @@ describe("clients shared functionality", function () {
 
             it("can read and write strings", async function () {
                 const dataPromise = testing.echo.events.sentData.once();
-
-                const sending = "Make it so number one.";
-                testing.netLink.send(sending);
+                testing.netLink.send(testing.str);
                 const sent = await dataPromise;
-                expect(sent.str).to.equal(sending); // should be echoed back
+                expect(sent.str).to.equal(testing.str); // should be echoed back
 
                 const read = testing.netLink.receive();
                 expect(read).to.be.instanceOf(Buffer);
@@ -33,7 +31,7 @@ describe("clients shared functionality", function () {
             it("can send Buffers", async function () {
                 const dataPromise = testing.echo.events.sentData.once();
 
-                const buffer = Buffer.from("I hate these bugs.");
+                const buffer = Buffer.from(testing.str);
                 testing.netLink.send(buffer);
                 const sent = await dataPromise;
                 expect(sent.buffer.compare(buffer)).to.equal(0); // should be echoed back
@@ -45,15 +43,13 @@ describe("clients shared functionality", function () {
             it("can send Uint8Arrays", async function () {
                 const dataPromise = testing.echo.events.sentData.once();
 
-                const text = "Would you like some tea?";
-                const textEncoder = new TextEncoder();
-                const uint8array = textEncoder.encode(text);
+                const uint8array = new TextEncoder().encode(testing.str);
                 testing.netLink.send(uint8array);
                 const sent = await dataPromise;
-                expect(sent.str).to.equal(text); // should be echoed back
+                expect(sent.str).to.equal(testing.str); // should be echoed back
 
                 const read = testing.netLink.receive();
-                expect(read?.toString()).to.equal(text);
+                expect(read?.toString()).to.equal(testing.str);
             });
 
             it("can do non blocking reads", function () {
@@ -77,7 +73,7 @@ describe("clients shared functionality", function () {
                 );
                 const worker = fork(workerPath, [], {
                     env: {
-                        testPort: String(testing.echo.port),
+                        testPort: String(testing.port),
                         testString,
                         testType,
                     },
