@@ -1,26 +1,57 @@
-import { TextEncoder } from "util";
+import { format, TextEncoder } from "util";
 import { expect } from "chai";
 import { NetLinkSocketUDP } from "../lib";
-import { setupTestingForUDP } from "./utils";
+import { permutations, setupTestingForUDP } from "./utils";
+
+const constructorArgs = permutations(["*", undefined], [60_600, undefined], [
+    "IPv4",
+    "IPv6",
+    undefined,
+] as const);
 
 describe("UDP client specific functionality", function () {
     const testing = setupTestingForUDP(this);
 
-    it("can be constructed with portFrom set", async function () {
-        const sibling = testing.netLink;
-        const portFrom = sibling.getPortFrom() + 100;
-        expect(portFrom).not.to.equal(sibling.getPortFrom());
-        expect(portFrom).not.to.equal(sibling.getPortTo());
+    describe("can be constructed with optional args", function () {
+        for (const [hostFrom, portFrom, ipVersion] of constructorArgs) {
+            const pretty = format({ hostFrom, portFrom, ipVersion });
 
-        const udp = new NetLinkSocketUDP(testing.host, testing.port, portFrom);
-        expect(udp.getPortFrom()).to.equal(portFrom);
+            it(`can be constructed with ${pretty}`, async function () {
+                const sibling = testing.netLink;
 
-        const onceSent = testing.echo.events.sentData.once();
-        udp.send(testing.str);
-        const sent = await onceSent;
+                if (portFrom) {
+                    expect(portFrom).not.to.equal(sibling.getPortFrom());
+                    expect(portFrom).not.to.equal(sibling.getPortTo());
+                }
 
-        expect(sent.from.port).to.equal(portFrom);
-        expect(sent.str).to.equal(testing.str);
+                const udp = new NetLinkSocketUDP(
+                    testing.host,
+                    testing.port,
+                    hostFrom,
+                    portFrom,
+                    ipVersion,
+                );
+
+                if (portFrom) {
+                    expect(udp.getPortFrom()).to.equal(portFrom);
+                }
+                if (hostFrom) {
+                    expect(udp.getHostFrom()).to.equal(hostFrom);
+                }
+                expect(udp.isIPv4()).to.equal(ipVersion !== "IPv6");
+                expect(udp.isIPv6()).to.equal(ipVersion === "IPv6");
+
+                const onceSent = testing.echo.events.sentData.once();
+                udp.send(testing.str);
+                const sent = await onceSent;
+
+                if (portFrom) {
+                    expect(sent.from.port).to.equal(portFrom);
+                }
+                expect(sent.str).to.equal(testing.str);
+                udp.disconnect();
+            });
+        }
     });
 
     it("can receiveFrom other UDP sockets", async function () {

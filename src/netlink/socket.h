@@ -59,7 +59,7 @@ class Socket {
 
         Socket(unsigned portFrom, Protocol protocol = TCP, IPVer ipVer = IP4, const string& hostFrom = "", unsigned listenQueue = DEFAULT_LISTEN_QUEUE);
 
-        Socket(const string& hostTo, unsigned portTo, unsigned portFrom, IPVer ipVer = ANY);
+        Socket(const string& hostTo, unsigned portTo, const string& hostFrom, unsigned portFrom, IPVer ipVer = ANY);
 
         ~Socket();
 

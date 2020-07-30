@@ -229,7 +229,7 @@ export declare class NetLinkSocketUDP extends NetLinkSocketBase<"UDP"> {
     constructor(
         hostTo: string,
         portTo: number,
-        // TODO: hostFrom?: string,
+        hostFrom?: string,
         portFrom?: number,
         ipVersion?: "IPv4" | "IPv6",
     );

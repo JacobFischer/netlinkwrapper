@@ -1,5 +1,6 @@
 export * from "./echo-socket";
 export * from "./hash";
+export * from "./permutations";
 export * from "./setup";
 export * from "./setup.tcp-client";
 export * from "./setup.tcp-server";

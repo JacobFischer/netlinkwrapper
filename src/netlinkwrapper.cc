@@ -203,6 +203,7 @@ void NetLinkWrapper::new_udp(const v8::FunctionCallbackInfo<v8::Value> &args)
 
     // expected args, in order
     std::string host_to;
+    std::string host_from;
     unsigned int port_to = 0;
     unsigned int port_from = 0;
     NL::IPVer ipver = NL::IPVer::IP4;
@@ -233,22 +234,34 @@ void NetLinkWrapper::new_udp(const v8::FunctionCallbackInfo<v8::Value> &args)
 
     if (args.Length() >= 3 && !args[2]->IsUndefined())
     {
-        auto third_arg = args[2];
+        auto arg_host_from = args[2];
+        if (!arg_host_from->IsString())
+        {
+            isolate->ThrowException(v8::Exception::TypeError(Nan::New("'new NetLinkSocketUDP' third argument must be an ip version string").ToLocalChecked()));
+            return;
+        }
+        Nan::Utf8String utf8_string(arg_host_from);
+        host_from = std::string(*utf8_string);
+    }
+
+    if (args.Length() >= 4 && !args[3]->IsUndefined())
+    {
+        auto third_arg = args[3];
         if (!third_arg->IsNumber())
         {
-            isolate->ThrowException(v8::Exception::TypeError(Nan::New("'new NetLinkSocketUDP' third argument must be a portFrom number").ToLocalChecked()));
+            isolate->ThrowException(v8::Exception::TypeError(Nan::New("'new NetLinkSocketUDP' fourth argument must be a portFrom number").ToLocalChecked()));
             return;
         }
         auto as_number = third_arg->NumberValue(isolate->GetCurrentContext()).FromJust();
         port_from = static_cast<int>(as_number);
     }
 
-    if (args.Length() >= 4 && !args[3]->IsUndefined())
+    if (args.Length() >= 5 && !args[4]->IsUndefined())
     {
-        auto arg_ipver = args[3];
+        auto arg_ipver = args[4];
         if (!arg_ipver->IsString())
         {
-            isolate->ThrowException(v8::Exception::TypeError(Nan::New("'new NetLinkSocketUDP' third argument must be an ip version string").ToLocalChecked()));
+            isolate->ThrowException(v8::Exception::TypeError(Nan::New("'new NetLinkSocketUDP' fifth argument must be an ip version string").ToLocalChecked()));
             return;
         }
         Nan::Utf8String ipver_utf8_string(arg_ipver);
@@ -260,7 +273,7 @@ void NetLinkWrapper::new_udp(const v8::FunctionCallbackInfo<v8::Value> &args)
         }
         else if (ipver_string.compare("IPv4") != 0)
         {
-            isolate->ThrowException(v8::Exception::TypeError(Nan::New("'new NetLinkSocketUDP' fourth argument must be 'IPv4', 'IPv6' or undefined").ToLocalChecked()));
+            isolate->ThrowException(v8::Exception::TypeError(Nan::New("'new NetLinkSocketUDP' fifth argument must be 'IPv4', 'IPv6' or undefined").ToLocalChecked()));
             return;
         }
     }
@@ -268,9 +281,9 @@ void NetLinkWrapper::new_udp(const v8::FunctionCallbackInfo<v8::Value> &args)
     NL::Socket *socket;
     try
     {
-        if (port_from != 0)
+        if (port_from != 0 || host_from.length() > 0)
         {
-            socket = new NL::Socket(host_to, port_to, port_from, ipver);
+            socket = new NL::Socket(host_to, port_to, host_from, port_from, ipver);
         }
         else
         {
@@ -751,6 +764,7 @@ void NetLinkWrapper::set_blocking(const v8::FunctionCallbackInfo<v8::Value> &arg
             return;
         }
 
+        auto foo = Nan::To<bool>(arg).ToChecked();
         bool blocking = arg->BooleanValue(isolate);
 
         try

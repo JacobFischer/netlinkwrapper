@@ -326,8 +326,8 @@ Socket::Socket(unsigned portFrom, Protocol protocol, IPVer ipVer, const string& 
 *  ERROR_CAN_NOT_LISTEN*, ERROR_CONNECT_SOCKET*
 */
 
-Socket::Socket(const string& hostTo, unsigned portTo, unsigned portFrom, IPVer ipVer):
-                _hostTo(hostTo), _portTo(portTo), _portFrom(portFrom), _protocol(UDP),
+Socket::Socket(const string& hostTo, unsigned portTo, const string& hostFrom, unsigned portFrom, IPVer ipVer):
+                _hostTo(hostTo), _portTo(portTo), _portFrom(portFrom), _hostFrom(hostFrom), _protocol(UDP),
                 _ipVer(ipVer), _type(CLIENT), _blocking(true), _listenQueue(0)
 {
 

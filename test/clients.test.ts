@@ -127,6 +127,7 @@ describe("clients shared functionality", function () {
                           localhostIPv6,
                           testing.port,
                           undefined,
+                          undefined,
                           "IPv6",
                       );
 
