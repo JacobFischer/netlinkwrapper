@@ -1,5 +1,5 @@
 import { NetLinkSocketBase } from "../lib";
-import { setups, EchoSocket } from "./utils";
+import { badArg, EchoSocket, setups } from "./utils";
 import { expect } from "chai";
 
 const setupsList = [setups.tcpClient, setups.tcpServer, setups.udp];
@@ -42,6 +42,10 @@ describe("base sockets", function () {
                 expect(testing.netLink.isBlocking()).to.be.true;
                 testing.netLink.setBlocking(false);
                 expect(testing.netLink.isBlocking()).to.be.false;
+            });
+
+            it("will not accept invalid setBlocking args", function () {
+                expect(() => testing.netLink.setBlocking(badArg())).to.throw();
             });
 
             it("can get portFrom", function () {

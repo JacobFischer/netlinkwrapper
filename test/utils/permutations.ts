@@ -24,6 +24,19 @@ export function permutations<
     C extends readonly unknown[],
     D extends readonly unknown[]
 >(a: A, b: B, c: C, d: D): [ToUnion<A>, ToUnion<B>, ToUnion<C>, ToUnion<D>][];
+export function permutations<
+    A extends readonly unknown[],
+    B extends readonly unknown[],
+    C extends readonly unknown[],
+    D extends readonly unknown[],
+    E extends readonly unknown[]
+>(
+    a: A,
+    b: B,
+    c: C,
+    d: D,
+    e: E,
+): [ToUnion<A>, ToUnion<B>, ToUnion<C>, ToUnion<D>, ToUnion<E>][];
 
 /**
  * Builds permutations of arrays, with generic type building.

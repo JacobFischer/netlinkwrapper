@@ -1,3 +1,4 @@
+export * from "./bad-arg";
 export * from "./echo-socket";
 export * from "./hash";
 export * from "./permutations";

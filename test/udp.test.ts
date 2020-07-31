@@ -1,19 +1,28 @@
 import { format, TextEncoder } from "util";
 import { expect } from "chai";
 import { NetLinkSocketUDP } from "../lib";
-import { permutations, setupTestingForUDP } from "./utils";
+import { permutations, setupTestingForUDP, badArg } from "./utils";
 
-const constructorArgs = permutations(["*", undefined], [60_600, undefined], [
-    "IPv4",
-    "IPv6",
-    undefined,
-] as const);
+const validConstructorArgs = permutations(
+    ["*", undefined],
+    [60_600, undefined],
+    ["IPv4", "IPv6", undefined] as const,
+);
+
+const invalidConstructorArgs = permutations(
+    ["*", badArg<string>()],
+    [60_600, badArg<number>()],
+    ["*", badArg<string>()],
+    [60_601, badArg<number>()],
+    ["IPv4", badArg<"IPv6">()] as const,
+    // remove the permutation with no symbols, as it is actually valid
+).filter((args) => args.find((arg) => typeof arg === "symbol"));
 
 describe("UDP client specific functionality", function () {
     const testing = setupTestingForUDP(this);
 
     describe("can be constructed with optional args", function () {
-        for (const [hostFrom, portFrom, ipVersion] of constructorArgs) {
+        for (const [hostFrom, portFrom, ipVersion] of validConstructorArgs) {
             const pretty = format({ hostFrom, portFrom, ipVersion });
 
             it(`can be constructed with ${pretty}`, async function () {
@@ -50,6 +59,16 @@ describe("UDP client specific functionality", function () {
                 }
                 expect(sent.str).to.equal(testing.str);
                 udp.disconnect();
+            });
+        }
+    });
+
+    describe("cannot be constructed with invalid args", function () {
+        for (const args of invalidConstructorArgs) {
+            const pretty = args.map(String).join(", ");
+            it(`cannot be constructed with [${pretty}]}`, function () {
+                const create = () => new NetLinkSocketUDP(...args);
+                expect(create).to.throw();
             });
         }
     });
@@ -110,6 +129,6 @@ describe("UDP client specific functionality", function () {
                 1234,
                 "I scream into the void",
             ),
-        ).not.to.throw;
+        ).not.to.throw();
     });
 });
