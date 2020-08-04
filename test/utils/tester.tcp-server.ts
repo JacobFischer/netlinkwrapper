@@ -1,7 +1,6 @@
 import { AddressInfo, Socket as SocketTCP } from "net";
-import { BaseContainer, hashTestingDataInto, newContainer } from "./hash";
 import { EchoSocket } from "./echo-socket";
-import { TestingSetupFunction } from "./setup";
+import { Tester } from "./tester";
 import { NetLinkSocketServerTCP } from "../../lib";
 
 /**
@@ -11,7 +10,7 @@ import { NetLinkSocketServerTCP } from "../../lib";
 export class EchoClientTCP extends EchoSocket<AddressInfo> {
     private socket!: SocketTCP;
 
-    public start(data: BaseContainer): Promise<void> {
+    public start(data: { host: string; port: number }): Promise<void> {
         return new Promise((resolve) => {
             this.socket = new SocketTCP();
             this.socket.on("data", (buffer) => {
@@ -46,35 +45,18 @@ export class EchoClientTCP extends EchoSocket<AddressInfo> {
     }
 }
 
-/*
-export const setupTestingForServerTCP = createTestUtil(
-    (host, port) => new NetLinkSocketServerTCP(port, host),
-    (_, port) => new EchoServerTCP(port),
-    true,
-);
-*/
-
-export const setupTestingForServerTCP: TestingSetupFunction<
+export class TesterServerTCP extends Tester<
     NetLinkSocketServerTCP,
     EchoClientTCP
-> = (suite: Mocha.Suite) => {
-    const container = newContainer({
-        netLink: (null as unknown) as NetLinkSocketServerTCP,
-        echo: new EchoClientTCP(),
-    });
+> {
+    public static readonly tests = "TCP Server";
 
-    suite.beforeEach(async function () {
-        hashTestingDataInto(this, container);
-        container.netLink = new NetLinkSocketServerTCP(container.port);
-        await container.echo.start(container);
-    });
-
-    suite.afterEach(async () => {
-        await container.echo.stop();
-        if (!container.netLink.isDestroyed()) {
-            container.netLink.disconnect();
-        }
-    });
-
-    return container;
-};
+    constructor(suite: Mocha.Suite) {
+        super(
+            suite,
+            new EchoClientTCP(),
+            ({ port }) => new NetLinkSocketServerTCP(port),
+            false,
+        );
+    }
+}

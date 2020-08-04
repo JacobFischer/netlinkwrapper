@@ -1,9 +1,9 @@
 import { expect } from "chai";
-import { setupTestingForServerTCP } from "./utils";
+import { badArg, TesterServerTCP } from "./utils";
 import { NetLinkSocketClientTCP } from "../lib";
 
 describe("TCP Server functionality", function () {
-    const testing = setupTestingForServerTCP(this);
+    const testing = new TesterServerTCP(this);
 
     it("exists", function () {
         expect(testing).to.exist;
@@ -11,7 +11,13 @@ describe("TCP Server functionality", function () {
 
     it("can get hostFrom", function () {
         // "localhost" maps to ""
-        expect(testing.netLink.getHostFrom()).to.equal("");
+        expect(testing.netLink.hostFrom).to.equal("");
+    });
+
+    it("cannot set hostFrom", function () {
+        expect(() => {
+            testing.settableNetLink.hostFrom = badArg();
+        }).to.throw();
     });
 
     it("can accept clients", function () {
@@ -20,7 +26,7 @@ describe("TCP Server functionality", function () {
         expect(client).to.exist;
         expect(client).to.be.an.instanceOf(NetLinkSocketClientTCP);
 
-        expect(client?.getPortFrom()).to.equal(testing.port);
+        expect(client?.portFrom).to.equal(testing.port);
 
         client?.disconnect();
     });
@@ -34,7 +40,7 @@ describe("TCP Server functionality", function () {
         }
 
         const sentData = testing.echo.events.sentData.once();
-        client.setBlocking(false);
+        client.isBlocking = false;
         expect(client.receive()).to.be.undefined;
         client.send(testing.str);
         const sent = await sentData;
@@ -48,7 +54,7 @@ describe("TCP Server functionality", function () {
     it("can attempt to accept when no clients connect", function () {
         // We don't want it to block forever waiting for a client that
         // will never exist
-        testing.netLink.setBlocking(false);
+        testing.netLink.isBlocking = false;
 
         // first echo client that always connects
         const client = testing.netLink.accept();

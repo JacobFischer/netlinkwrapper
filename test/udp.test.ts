@@ -1,57 +1,52 @@
 import { format, TextEncoder } from "util";
 import { expect } from "chai";
 import { NetLinkSocketUDP } from "../lib";
-import { permutations, setupTestingForUDP, badArg } from "./utils";
+import { badArg, permutations, TesterUDP } from "./utils";
 
 const validConstructorArgs = permutations(
-    ["*", undefined],
     [60_600, undefined],
+    ["", undefined],
     ["IPv4", "IPv6", undefined] as const,
 );
 
 const invalidConstructorArgs = permutations(
-    ["*", badArg<string>()],
     [60_600, badArg<number>()],
     ["*", badArg<string>()],
-    [60_601, badArg<number>()],
     ["IPv4", badArg<"IPv6">()] as const,
     // remove the permutation with no symbols, as it is actually valid
 ).filter((args) => args.find((arg) => typeof arg === "symbol"));
 
 describe("UDP client specific functionality", function () {
-    const testing = setupTestingForUDP(this);
+    const testing = new TesterUDP(this);
 
     describe("can be constructed with optional args", function () {
-        for (const [hostFrom, portFrom, ipVersion] of validConstructorArgs) {
+        for (const [portFrom, hostFrom, ipVersion] of validConstructorArgs) {
             const pretty = format({ hostFrom, portFrom, ipVersion });
 
             it(`can be constructed with ${pretty}`, async function () {
                 const sibling = testing.netLink;
 
                 if (portFrom) {
-                    expect(portFrom).not.to.equal(sibling.getPortFrom());
-                    expect(portFrom).not.to.equal(sibling.getPortTo());
+                    expect(portFrom).not.to.equal(sibling.portFrom);
                 }
 
                 const udp = new NetLinkSocketUDP(
-                    testing.host,
-                    testing.port,
-                    hostFrom,
                     portFrom,
+                    hostFrom,
                     ipVersion,
                 );
 
                 if (portFrom) {
-                    expect(udp.getPortFrom()).to.equal(portFrom);
+                    expect(udp.portFrom).to.equal(portFrom);
                 }
-                if (hostFrom) {
-                    expect(udp.getHostFrom()).to.equal(hostFrom);
+                if (typeof hostFrom === "string") {
+                    expect(udp.hostFrom).to.equal(hostFrom);
                 }
-                expect(udp.isIPv4()).to.equal(ipVersion !== "IPv6");
-                expect(udp.isIPv6()).to.equal(ipVersion === "IPv6");
+                expect(udp.isIPv4).to.equal(ipVersion !== "IPv6");
+                expect(udp.isIPv6).to.equal(ipVersion === "IPv6");
 
                 const onceSent = testing.echo.events.sentData.once();
-                udp.send(testing.str);
+                udp.sendTo(testing.host, testing.port, testing.str);
                 const sent = await onceSent;
 
                 if (portFrom) {
@@ -75,7 +70,7 @@ describe("UDP client specific functionality", function () {
 
     it("can receiveFrom other UDP sockets", async function () {
         const sentPromise = testing.echo.events.sentData.once();
-        testing.netLink.send(testing.str);
+        testing.netLink.sendTo(testing.host, testing.port, testing.str);
         void (await sentPromise);
         const read = testing.netLink.receiveFrom();
 
@@ -90,7 +85,7 @@ describe("UDP client specific functionality", function () {
     });
 
     it("can receiveFrom nothing", function () {
-        testing.netLink.setBlocking(false);
+        testing.netLink.isBlocking = false;
         const readFromNothing = testing.netLink.receiveFrom();
         expect(readFromNothing).to.be.undefined;
     });
@@ -100,7 +95,7 @@ describe("UDP client specific functionality", function () {
         testing.netLink.sendTo(testing.host, testing.port, testing.str);
         const sent = await sentPromise;
 
-        expect(sent.from.port).to.equal(testing.netLink.getPortFrom());
+        expect(sent.from.port).to.equal(testing.netLink.portFrom);
         expect(sent.str).to.equal(testing.str);
     });
 

@@ -7,9 +7,7 @@
  * the different socket classes. **Note:**: Attempting to use `new` against this
  * class will result in an exception being thrown.
  */
-export declare abstract class NetLinkSocketBase<
-    TProtocol extends "TCP" | "UDP" | undefined = undefined
-> {
+export declare abstract class NetLinkSocketBase {
     /**
      * Disconnects this so. Once this is called the socket is considered
      * "destroyed" and no no longer be used for any form of communication.
@@ -17,111 +15,66 @@ export declare abstract class NetLinkSocketBase<
     disconnect(): void;
 
     /**
-     * Gets the local port of the socket.
-     *
-     * @returns A number of the port listening from.
+     * The local port the socket is bound to.
      */
-    getPortFrom(): number;
+    readonly portFrom: number;
 
     /**
-     * Returns whether the socket is blocking (true) or not (false).
-     *
-     * @returns True if this socket is set to block, false otherwise.
-     */
-    isBlocking(): boolean;
-
-    /**
-     * Sets the blocking nature of the Socket. True if to block, false
+     * Gets/sets the blocking nature of the Socket. True if to block, false
      * otherwise.
      *
      * When a socket is blocking, calls such as receive() and accept() will
      * synchronously wait until there is data to return from those calls.
      * When a socket is not set to block, they will check and immediately return
      * undefined when there is no data from those calls.
-     *
-     * @param blocking - True if blocking should be enabled. False otherwise.
      */
-    setBlocking(blocking: boolean): void;
+    isBlocking: boolean;
 
     /**
-     * Checks if the socket is Internet Protocol Version 4 (IPv4).
-     *
-     * @returns True if the socket is IPv4, false otherwise.
-     */
-    isIPv4(): boolean;
-
-    /**
-     * Checks if the socket is Internet Protocol Version 6 (IPv6).
-     *
-     * @returns True if the socket is IPv6, false otherwise.
-     */
-    isIPv6(): boolean;
-
-    /**
-     * Checks if the socket is a TCP socket. When true this must be a
-     * NetLinkSocketClientTCP or NetLinkSocketServerTCP instance.
-     *
-     * @returns True if this is a TCP socket, false otherwise.
-     */
-    isTCP(): TProtocol extends "TCP"
-        ? true
-        : TProtocol extends "UDP"
-        ? false
-        : boolean;
-
-    /**
-     * Checks if the socket is a UDP socket. When true this must be a
-     * NetLinkSocketUDP instance.
-     *
-     * @returns True if this is a UDP socket, false otherwise.
-     */
-    isUDP(): TProtocol extends "UDP"
-        ? true
-        : TProtocol extends "TCP"
-        ? false
-        : boolean;
-
-    /**
-     * Checks if this socket has been manually disconnected and thus destroyed.
-     * Destroyed sockets cannot be re-used.
+     * Flag if this socket has been manually disconnected and thus destroyed.
+     * Destroyed sockets cannot be re-used. True if this socket has been
+     * destroyed and disconnected. False otherwise.
      *
      * **NOTE**: On unexpected socket errors this may not be set correctly. This
-     * check can only ensure this socket was not unexpectedly disconnected.
-     *
-     * @returns True if this socket has been destroyed and disconnected. False
-     * otherwise.
+     * check can only ensure this socket disconnected in an expected fashion.
      */
-    isDestroyed(): boolean;
+    readonly isDestroyed: boolean;
+
+    /**
+     * Flag if the socket is Internet Protocol Version 4 (IPv4).
+     */
+    readonly isIPv4: boolean;
+
+    /**
+     * Flag if the socket is Internet Protocol Version 6 (IPv6).
+     */
+    readonly isIPv6: boolean;
 }
 
 /**
  * Represents a TCP Client connection.
  */
-export declare class NetLinkSocketClientTCP extends NetLinkSocketBase<"TCP"> {
+export declare class NetLinkSocketClientTCP extends NetLinkSocketBase {
     /**
      * Creates, and then attempts to connect to a remote server given an
      * address. If no connection can be made, an Error is thrown.
      *
-     * @param hostTo - The host of the address to connect this TCP client to.
      * @param portTo - The host of the address to connect this TCP client to.
+     * @param hostTo - The host of the address to connect this TCP client to.
      * @param ipVersion - An optional specific IP version to use. Defaults to
      * IPv4.
      */
-    constructor(hostTo: string, portTo: number, ipVersion?: "IPv4" | "IPv6");
+    constructor(portTo: number, hostTo: string, ipVersion?: "IPv4" | "IPv6");
 
     /**
-     * Returns the target host of the socket.
-     *
-     * @returns The host this socket is connected to.
+     * The target host of the socket.
      */
-    getHostTo(): string;
+    readonly hostTo: string;
 
     /**
-     * Returns the port this socket is connected/sends to.
-     *
-     * @returns The port this socket is connected/sends to.
+     * The port this socket is connected/sends to.
      */
-    getPortTo(): number;
+    readonly portTo: number;
 
     /**
      * Attempts to Receive data from the server and return it as a Buffer.
@@ -140,26 +93,12 @@ export declare class NetLinkSocketClientTCP extends NetLinkSocketBase<"TCP"> {
      * Uint8Array.
      */
     send(data: string | Buffer | Uint8Array): void;
-
-    /**
-     * Returns false as all TCP Clients are not servers.
-     *
-     * @returns Always false.
-     */
-    isServer(): false;
-
-    /**
-     * Returns True as all TCP Clients are clients.
-     *
-     * @returns Always true.
-     */
-    isClient(): true;
 }
 
 /**
  * Represents a TCP Server connection.
  */
-export declare class NetLinkSocketServerTCP extends NetLinkSocketBase<"TCP"> {
+export declare class NetLinkSocketServerTCP extends NetLinkSocketBase {
     /**
      * Creates a TCP Server listening on a given port (an optional host) for
      * new TCP Client connections.
@@ -190,81 +129,37 @@ export declare class NetLinkSocketServerTCP extends NetLinkSocketBase<"TCP"> {
     accept(): NetLinkSocketClientTCP | undefined;
 
     /**
-     * Returns the socket local address. Empty string means any bound host.
-     *
-     * @returns The socket local address. Empty string means any bound host.
+     * Gets the socket local address. Empty string means any bound host.
      */
-    getHostFrom(): string;
-
-    /**
-     * Returns true as all TCP Servers are servers.
-     *
-     * @returns Always true.
-     */
-    isServer(): true;
-
-    /**
-     * Returns false as all TCP Servers are not clients.
-     *
-     * @returns Always false.
-     */
-    isClient(): false;
+    readonly hostFrom: string;
 }
 
 /**
  * Represents a UDP Datagram.
  */
-export declare class NetLinkSocketUDP extends NetLinkSocketBase<"UDP"> {
+export declare class NetLinkSocketUDP extends NetLinkSocketBase {
     /**
      * Creates a UDP socket datagram with an address to use as the default
      * socket to send/receive from. Because UDP is connection-less unlike TCP,
      * no Error is thrown on construction if the host/port combo do no listen.
      *
-     * @param hostTo - The default host to send/receive from.
-     * @param portTo - The default port to send/receive from.
      * @param portFrom - An optional local port to bind to. If left undefined
      * then the local port of the socket is chosen by operating system.
+     * @param hostFrom - An optional address to bind to. If left undefined,
+     * empty string, or "*", then the operating system attempts to bind
+     * to all local addresses.
      * @param ipVersion - The IP version to be used. IPv4 by default.
      */
     constructor(
-        hostTo: string,
-        portTo: number,
-        hostFrom?: string,
         portFrom?: number,
+        hostFrom?: string,
         ipVersion?: "IPv4" | "IPv6",
     );
 
     /**
-     * Returns the target host of the socket.
-     *
-     * @returns The host this socket is connected to.
+     * The socket local address. Empty string means any bound host.
      */
-    getHostTo(): string;
-
-    /**
-     * Returns the socket local address. Empty string means any bound host.
-     *
-     * @returns The socket local address. Empty string means any bound host.
-     */
-    getHostFrom(): string;
-
-    /**
-     * Returns the port this socket is connected/sends to.
-     *
-     * @returns The port this socket is connected/sends to.
-     */
-    getPortTo(): number;
-
-    /**
-     * Attempts to Receive data from the hostTo/portTo and return it as a
-     * Buffer.
-     *
-     * @returns A Buffer instance with the data read from the hostTo/portTo.
-     * If set to blocking this call will synchronously block until some data
-     * is received. Otherwise if there is no data to receive, this will return
-     * undefined immediately and not block.
-     */
-    receive(): Buffer | undefined;
+    readonly hostFrom: string;
 
     /**
      * Receive data from datagrams and returns the data and their address.
@@ -273,14 +168,6 @@ export declare class NetLinkSocketUDP extends NetLinkSocketBase<"UDP"> {
      * data. The address is present as key `host` and key `port`.
      */
     receiveFrom(): { host: string; port: number; data: Buffer } | undefined;
-
-    /**
-     * Sends the data to the default hostTo/portTo.
-     *
-     * @param data - The data you want to send, as a string, Buffer, or
-     * Uint8Array.
-     */
-    send(data: string | Uint8Array | Buffer): void;
 
     /**
      * Sends to a specific datagram address some data.

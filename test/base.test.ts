@@ -1,8 +1,14 @@
 import { NetLinkSocketBase } from "../lib";
-import { badArg, EchoSocket, setups } from "./utils";
+import {
+    badArg,
+    EchoSocket,
+    TesterClientTCP,
+    TesterServerTCP,
+    TesterUDP,
+} from "./utils";
 import { expect } from "chai";
 
-const setupsList = [setups.tcpClient, setups.tcpServer, setups.udp];
+const testers = [TesterClientTCP, TesterServerTCP, TesterUDP];
 
 describe("base sockets", function () {
     it("cannot be constructed as a base class.", function () {
@@ -12,13 +18,9 @@ describe("base sockets", function () {
         }).to.throw();
     });
 
-    for (const { setup, isClient, isTCP } of setupsList) {
-        const protocol = isTCP ? "TCP" : "UDP";
-        const socketType = isClient ? "Client" : "Server";
-        const description = `${protocol} ${socketType} base functionality`;
-
-        describe(description, function () {
-            const testing = setup(this);
+    for (const Tester of testers) {
+        describe(`${Tester.tests} base functionality`, function () {
+            const testing = new Tester(this);
 
             it("exists", function () {
                 expect(testing.netLink).to.exist;
@@ -38,42 +40,65 @@ describe("base sockets", function () {
             });
 
             it("can get and set blocking state", function () {
-                testing.netLink.setBlocking(true);
-                expect(testing.netLink.isBlocking()).to.be.true;
-                testing.netLink.setBlocking(false);
-                expect(testing.netLink.isBlocking()).to.be.false;
+                expect(testing.netLink.isBlocking).to.be.true;
+                testing.netLink.isBlocking = false;
+                expect(testing.netLink.isBlocking).to.be.false;
+                testing.netLink.isBlocking = true;
+                expect(testing.netLink.isBlocking).to.be.true;
             });
 
-            it("will not accept invalid setBlocking args", function () {
-                expect(() => testing.netLink.setBlocking(badArg())).to.throw();
+            it("cannot set isBlocking to an invalid arg", function () {
+                expect(() => {
+                    testing.netLink.isBlocking = badArg();
+                }).to.throw();
             });
 
             it("can get portFrom", function () {
-                const portFrom = testing.netLink.getPortFrom();
+                const portFrom = testing.netLink.portFrom;
                 expect(typeof portFrom).to.equal("number");
                 // can't guarantee portFrom is bound to a specific number for
             });
 
-            it("can check isTCP", function () {
-                const checked = testing.netLink.isTCP();
-                expect(typeof checked).to.equal("boolean");
-                expect(checked).to.equal(isTCP);
-            });
-
-            it("can check isUDP", function () {
-                const checked = testing.netLink.isUDP();
-                expect(typeof checked).to.equal("boolean");
-                expect(checked).to.equal(!isTCP);
+            it("cannot set portFrom", function () {
+                expect(() => {
+                    testing.settableNetLink.portFrom = badArg();
+                }).to.throw();
             });
 
             it("can disconnect", function () {
                 testing.netLink.disconnect();
             });
 
-            it("can check isDestroyed", function () {
-                expect(testing.netLink.isDestroyed()).to.be.false;
+            it("can get isDestroyed", function () {
+                expect(testing.netLink.isDestroyed).to.be.false;
                 testing.netLink.disconnect();
-                expect(testing.netLink.isDestroyed()).to.be.true;
+                expect(testing.netLink.isDestroyed).to.be.true;
+            });
+
+            it("cannot set isDestroyed", function () {
+                expect(() => {
+                    testing.settableNetLink.isDestroyed = badArg();
+                }).to.throw();
+            });
+
+            it("can get isIPv4", function () {
+                expect(typeof testing.netLink.isIPv4).to.equal("boolean");
+            });
+
+            it("cannot set isIPv4", function () {
+                expect(() => {
+                    testing.settableNetLink.isIPv4 = badArg();
+                }).to.throw();
+            });
+
+            it("can get isIPv6", function () {
+                expect(typeof testing.netLink.isIPv6).to.equal("boolean");
+            });
+
+            it("cannot set isIPv6", function () {
+                expect(() => {
+                    testing.settableNetLink.isIPv6 = badArg();
+                }).to.throw();
             });
         });
     }

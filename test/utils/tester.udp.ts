@@ -1,7 +1,6 @@
 import { createSocket, RemoteInfo } from "dgram";
-import { BaseContainer, hashTestingDataInto, newContainer } from "./hash";
 import { EchoSocket } from "./echo-socket";
-import { TestingSetupFunction } from "./setup";
+import { Tester } from "./tester";
 import { NetLinkSocketUDP } from "../../lib";
 
 // upd6 will accept IPv4/6 connections so it is ideal for testing with
@@ -10,7 +9,7 @@ const newUDP = () => createSocket({ type: "udp6" });
 export class EchoUDP extends EchoSocket<RemoteInfo> {
     private socket = newUDP();
 
-    public start(data: BaseContainer): Promise<void> {
+    public start(data: { port: number }): Promise<void> {
         return new Promise((resolve) => {
             // eslint-disable-next-line @typescript-eslint/no-misused-promises
             this.socket.on("message", async (buffer, remote) => {
@@ -59,36 +58,10 @@ export class EchoUDP extends EchoSocket<RemoteInfo> {
     }
 }
 
-/*
-export const setupTestingForUDP = createTestUtil(
-    (host, port) => new NetLinkSocketUDP(host, port),
-    (_, port) => new EchoUDP(port),
-);
-*/
+export class TesterUDP extends Tester<NetLinkSocketUDP, EchoUDP> {
+    public static readonly tests = "UDP";
 
-export const setupTestingForUDP: TestingSetupFunction<
-    NetLinkSocketUDP,
-    EchoUDP
-> = (suite) => {
-    const container = newContainer({
-        netLink: (null as unknown) as NetLinkSocketUDP,
-        echo: new EchoUDP(),
-    });
-
-    suite.beforeEach(async function () {
-        hashTestingDataInto(this, container);
-        await container.echo.start(container);
-        container.netLink = new NetLinkSocketUDP(
-            container.host,
-            container.port,
-        );
-    });
-    suite.afterEach(async () => {
-        if (!container.netLink.isDestroyed()) {
-            container.netLink.disconnect();
-        }
-        await container.echo.stop();
-    });
-
-    return container;
-};
+    constructor(suite: Mocha.Suite) {
+        super(suite, new EchoUDP(), () => new NetLinkSocketUDP());
+    }
+}
