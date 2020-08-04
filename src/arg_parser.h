@@ -6,262 +6,125 @@
 #include <nan.h>
 #include <node.h>
 #include <sstream>
-#include "arg_parser.h"
 #include "netlinkwrapper.h"
+#include "get_value.h"
 
-namespace ArgParser
+class ArgParser
 {
-    enum SubType
+private:
+    bool valid = true;
+    int position = -1;
+    bool optional = true;
+    const v8::FunctionCallbackInfo<v8::Value> *v8_args;
+
+    std::string named_position()
     {
-        None,
-        SendableData,
-    };
+        switch (this->position)
+        {
+        case 0:
+            return "First";
+        case 1:
+            return "Second";
+        case 2:
+            return "Third";
+        case 3:
+            return "Fourth";
+        case 4:
+            return "Fifth";
+        case 5:
+            return "Sixth";
+        case 6:
+            return "Seventh";
+        case 7:
+            return "Eighth";
+        case 8:
+            return "Ninth";
+        case 9:
+            return "Tenth";
+        // would there really be any more positional args past here?
+        default:
+            return "Some";
+        }
+    }
 
-    class Args
+    void invalidate(const char *arg_name, std::string reason)
     {
-    private:
-        bool valid = true;
-        int position = -1;
-        bool optional = true;
-        const v8::FunctionCallbackInfo<v8::Value> *v8_args;
+        this->valid = false;
 
-        template <typename T>
-        static std::string get_value(
-            T &&value,
-            const v8::Local<v8::Value> &arg,
-            SubType checking_for)
+        auto isolate = v8::Isolate::GetCurrent();
+        std::stringstream ss;
+
+        ss << named_position();
+        ss << " argument \"" << arg_name << "\" ";
+        ss << reason;
+        auto error = Nan::New(ss.str()).ToLocalChecked();
+        isolate->ThrowException(v8::Exception::TypeError(error));
+    }
+
+public:
+    ArgParser(const v8::FunctionCallbackInfo<v8::Value> &args)
+    {
+        this->v8_args = &args;
+    }
+
+    bool isInvalid()
+    {
+        return !this->valid;
+    }
+
+    template <typename T>
+    ArgParser &opt(
+        const char *arg_name,
+        T &&value,
+        GetValue::SubType sub_type = GetValue::SubType::None)
+    {
+        this->optional = true;
+        return this->arg(arg_name, value, sub_type);
+    }
+
+    template <typename T>
+    ArgParser &arg(
+        const char *arg_name,
+        T &&value,
+        GetValue::SubType sub_type = GetValue::SubType::None)
+    {
+        this->position += 1;
+
+        if (!this->valid)
         {
-            return "Cannot handle unknown type";
+            return *this; // no reason to keep parsing
         }
 
-        std::string named_position()
+        auto args_length = this->v8_args->Length();
+        if (this->position >= args_length)
         {
-            switch (this->position)
+            if (!this->optional)
             {
-            case 0:
-                return "First";
-            case 1:
-                return "Second";
-            case 2:
-                return "Third";
-            case 3:
-                return "Fourth";
-            case 4:
-                return "Fifth";
-            case 5:
-                return "Sixth";
-            case 6:
-                return "Seventh";
-            case 7:
-                return "Eighth";
-            case 8:
-                return "Ninth";
-            case 9:
-                return "Tenth";
-            // would there really be any more positional args past here?
-            default:
-                return "Some";
-            }
-        }
-
-        void invalidate(const char *arg_name, std::string reason)
-        {
-            this->valid = false;
-
-            auto isolate = v8::Isolate::GetCurrent();
-            std::stringstream ss;
-
-            ss << named_position();
-            ss << " argument \"" << arg_name << "\" ";
-            ss << reason;
-            auto error = Nan::New(ss.str()).ToLocalChecked();
-            isolate->ThrowException(v8::Exception::TypeError(error));
-        }
-
-    public:
-        Args(const v8::FunctionCallbackInfo<v8::Value> &args)
-        {
-            this->v8_args = &args;
-        }
-
-        bool isInvalid()
-        {
-            return !this->valid;
-        }
-
-        template <typename T>
-        Args &opt(
-            const char *arg_name,
-            T &&value,
-            SubType sub_type = SubType::None)
-        {
-            this->optional = true;
-            return this->arg(arg_name, value, sub_type);
-        }
-
-        template <typename T>
-        Args &arg(
-            const char *arg_name,
-            T &&value,
-            SubType sub_type = SubType::None)
-        {
-            this->position += 1;
-
-            if (!this->valid)
-            {
-                return *this; // no reason to keep parsing
-            }
-
-            auto args_length = this->v8_args->Length();
-            if (this->position >= args_length)
-            {
-                if (!this->optional)
-                {
-                    std::stringstream ss;
-                    ss << "is required, but not enough arguments passed "
-                       << "(" << args_length << ").";
-                    this->invalidate(arg_name, ss.str());
-                }
-
-                return *this;
-            }
-
-            auto arg = (*this->v8_args)[this->position];
-
-            if (this->optional && arg->IsUndefined())
-            {
-                return *this;
-            }
-
-            std::string error_message = Args::get_value<T>(value, arg, sub_type);
-
-            if (error_message.length() > 0)
-            {
-                this->invalidate(arg_name, error_message);
+                std::stringstream ss;
+                ss << "is required, but not enough arguments passed "
+                   << "(" << args_length << ").";
+                this->invalidate(arg_name, ss.str());
             }
 
             return *this;
         }
-    };
 
-    template <>
-    static std::string Args::get_value(
-        std::uint16_t &value,
-        const v8::Local<v8::Value> &arg,
-        SubType checking_for)
-    {
-        if (!arg->IsNumber())
+        auto arg = (*this->v8_args)[this->position];
+
+        if (this->optional && arg->IsUndefined())
         {
-            return "must be a number.";
+            return *this;
         }
 
-        auto isolate = v8::Isolate::GetCurrent();
-        auto as_number = arg->IntegerValue(isolate->GetCurrentContext()).FromJust();
+        std::string error_message = GetValue::get_value<T>(value, arg, sub_type);
 
-        if (as_number < 0)
+        if (error_message.length() > 0)
         {
-            std::stringstream ss;
-            ss << "is negative, must be positive (" << as_number << ").";
-            return ss.str();
+            this->invalidate(arg_name, error_message);
         }
 
-        if (as_number > UINT16_MAX)
-        {
-            std::stringstream ss;
-            ss << as_number << " beyond max port range of "
-               << UINT16_MAX << ".";
-            return ss.str();
-        }
-
-        value = static_cast<std::uint16_t>(as_number);
-        return "";
+        return *this;
     }
-
-    template <>
-    static std::string Args::get_value(
-        bool &value,
-        const v8::Local<v8::Value> &arg,
-        SubType checking_for)
-    {
-        if (!arg->IsBoolean())
-        {
-            return "must be a boolean.";
-        }
-
-        auto boolean = arg->IsTrue();
-        value = boolean;
-        return "";
-    }
-
-    template <>
-    static std::string Args::get_value(
-        NL::IPVer &value,
-        const v8::Local<v8::Value> &arg,
-        SubType checking_for)
-    {
-        std::string invalid_string("must be an ip version string either 'IPv4' or 'IPv6'.");
-        if (!arg->IsString())
-        {
-            return invalid_string;
-        }
-
-        Nan::Utf8String utf8_string(arg);
-        std::string str(*utf8_string);
-
-        if (str.compare("IPv6") == 0)
-        {
-            value = NL::IPVer::IP6;
-        }
-        else if (str.compare("IPv4") == 0)
-        {
-            value = NL::IPVer::IP4;
-        }
-        else
-        {
-            std::stringstream ss;
-            ss << invalid_string << " Got: '" << str << "'.";
-            return ss.str();
-        }
-
-        return "";
-    }
-
-    template <>
-    static std::string Args::get_value(
-        std::string &value,
-        const v8::Local<v8::Value> &arg,
-        SubType checking_for)
-    {
-        auto is_string = arg->IsString();
-        if (checking_for != SubType::SendableData && !is_string)
-        {
-            return "must be a string";
-        }
-
-        if (is_string)
-        {
-            Nan::Utf8String utf8_str(arg);
-            value = std::string(*utf8_str);
-        }
-        else if (arg->IsUint8Array())
-        {
-            auto typed_array = arg.As<v8::TypedArray>();
-            Nan::TypedArrayContents<char> contents(typed_array);
-            value = std::string(*contents, contents.length());
-        }
-        else if (node::Buffer::HasInstance(arg))
-        {
-            auto buffer = node::Buffer::Data(arg);
-            auto length = node::Buffer::Length(arg);
-            value = std::string(buffer, length);
-        }
-        else
-        {
-            return "must be a string, Buffer, or Uint8Array";
-        }
-
-        return "";
-    }
-}; // namespace ArgParser
+};
 
 #endif

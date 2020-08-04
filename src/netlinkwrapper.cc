@@ -8,6 +8,7 @@
 #include <sstream>
 #include <vector>
 #include "arg_parser.h"
+#include "get_value.h"
 #include "netlinkwrapper.h"
 #include "netlink/exception.h"
 
@@ -36,8 +37,6 @@ NetLinkWrapper::~NetLinkWrapper()
 void NetLinkWrapper::init(v8::Local<v8::Object> exports)
 {
     auto isolate = v8::Isolate::GetCurrent();
-
-    // https://stackoverflow.com/questions/28076382/v8-inherited-functiontemplate-not-getting-updates-to-the-parent-functiontemplate
 
     /* -- Base -- */
     auto name_base = v8_str("NetLinkSocketBase");
@@ -158,7 +157,7 @@ void NetLinkWrapper::new_tcp_client(const v8::FunctionCallbackInfo<v8::Value> &a
     std::uint16_t port = 0;
     NL::IPVer ip_version = NL::IPVer::IP4;
 
-    if (ArgParser::Args(args)
+    if (ArgParser(args)
             .arg("port", port)
             .arg("host", host)
             .opt("ipVersion", ip_version)
@@ -199,7 +198,7 @@ void NetLinkWrapper::new_udp(const v8::FunctionCallbackInfo<v8::Value> &args)
     std::string host_from;
     NL::IPVer ip_version = NL::IPVer::IP4;
 
-    if (ArgParser::Args(args)
+    if (ArgParser(args)
             .opt("portFrom", port_from)
             .opt("hostFrom", host_from)
             .opt("ipVersion", ip_version)
@@ -238,7 +237,7 @@ void NetLinkWrapper::new_tcp_server(const v8::FunctionCallbackInfo<v8::Value> &a
     std::string host_from;
     NL::IPVer ip_version = NL::IPVer::IP4;
 
-    if (ArgParser::Args(args)
+    if (ArgParser(args)
             .arg("portFrom", port_from)
             .opt("hostFrom", host_from)
             .opt("ipVersion", ip_version)
@@ -527,7 +526,7 @@ void NetLinkWrapper::receive_from(const v8::FunctionCallbackInfo<v8::Value> &arg
 void NetLinkWrapper::set_blocking(const v8::FunctionCallbackInfo<v8::Value> &args)
 {
     bool blocking = true;
-    if (ArgParser::Args(args)
+    if (ArgParser(args)
             .arg("blocking", blocking)
             .isInvalid())
     {
@@ -550,8 +549,8 @@ void NetLinkWrapper::set_blocking(const v8::FunctionCallbackInfo<v8::Value> &arg
 void NetLinkWrapper::send(const v8::FunctionCallbackInfo<v8::Value> &args)
 {
     std::string data;
-    if (ArgParser::Args(args)
-            .arg("data", data, ArgParser::SubType::SendableData)
+    if (ArgParser(args)
+            .arg("data", data, GetValue::SubType::SendableData)
             .isInvalid())
     {
         return;
@@ -576,10 +575,10 @@ void NetLinkWrapper::send_to(const v8::FunctionCallbackInfo<v8::Value> &args)
     std::string host;
     std::uint16_t port = 0;
     std::string data;
-    if (ArgParser::Args(args)
+    if (ArgParser(args)
             .arg("host", host)
             .arg("port", port)
-            .arg("data", data, ArgParser::SubType::SendableData)
+            .arg("data", data, GetValue::SubType::SendableData)
             .isInvalid())
     {
         return;
