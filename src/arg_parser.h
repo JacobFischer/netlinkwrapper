@@ -26,133 +26,12 @@ namespace ArgParser
         const v8::FunctionCallbackInfo<v8::Value> *v8_args;
 
         template <typename T>
-        std::string get_value(
+        static std::string get_value(
             T &&value,
             const v8::Local<v8::Value> &arg,
             SubType checking_for)
         {
             return "Cannot handle unknown type";
-        }
-
-        template <>
-        std::string get_value(
-            std::uint16_t &value,
-            const v8::Local<v8::Value> &arg,
-            SubType checking_for)
-        {
-            if (!arg->IsNumber())
-            {
-                return "must be a number.";
-            }
-
-            auto isolate = v8::Isolate::GetCurrent();
-            auto as_number = arg->IntegerValue(isolate->GetCurrentContext()).FromJust();
-
-            if (as_number < 0)
-            {
-                std::stringstream ss;
-                ss << "is negative, must be positive (" << as_number << ").";
-                return ss.str();
-            }
-
-            if (as_number > UINT16_MAX)
-            {
-                std::stringstream ss;
-                ss << as_number << " beyond max port range of "
-                   << UINT16_MAX << ".";
-                return ss.str();
-            }
-
-            value = static_cast<std::uint16_t>(as_number);
-            return "";
-        }
-
-        template <>
-        std::string get_value(
-            bool &value,
-            const v8::Local<v8::Value> &arg,
-            SubType checking_for)
-        {
-            if (!arg->IsBoolean())
-            {
-                return "must be a boolean.";
-            }
-
-            auto isolate = v8::Isolate::GetCurrent();
-            auto boolean = arg->IsTrue();
-
-            value = boolean;
-            return "";
-        }
-
-        template <>
-        std::string get_value(
-            NL::IPVer &value,
-            const v8::Local<v8::Value> &arg,
-            SubType checking_for)
-        {
-            std::string invalid_string("must be an ip version string either 'IPv4' or 'IPv6'.");
-            if (!arg->IsString())
-            {
-                return invalid_string;
-            }
-
-            Nan::Utf8String utf8_string(arg);
-            std::string str(*utf8_string);
-
-            if (str.compare("IPv6") == 0)
-            {
-                value = NL::IPVer::IP6;
-            }
-            else if (str.compare("IPv4") == 0)
-            {
-                value = NL::IPVer::IP4;
-            }
-            else
-            {
-                std::stringstream ss;
-                ss << invalid_string << " Got: '" << str << "'.";
-                return ss.str();
-            }
-
-            return "";
-        }
-
-        template <>
-        std::string get_value(
-            std::string &value,
-            const v8::Local<v8::Value> &arg,
-            SubType checking_for)
-        {
-            auto is_string = arg->IsString();
-            if (checking_for != SubType::SendableData && !is_string)
-            {
-                return "must be a string";
-            }
-
-            if (is_string)
-            {
-                Nan::Utf8String utf8_str(arg);
-                value = std::string(*utf8_str);
-            }
-            else if (arg->IsUint8Array())
-            {
-                auto typed_array = arg.As<v8::TypedArray>();
-                Nan::TypedArrayContents<char> contents(typed_array);
-                value = std::string(*contents, contents.length());
-            }
-            else if (node::Buffer::HasInstance(arg))
-            {
-                auto buffer = node::Buffer::Data(arg);
-                auto length = node::Buffer::Length(arg);
-                value = std::string(buffer, length);
-            }
-            else
-            {
-                return "must be a string, Buffer, or Uint8Array";
-            }
-
-            return "";
         }
 
         std::string named_position()
@@ -254,7 +133,7 @@ namespace ArgParser
                 return *this;
             }
 
-            std::string error_message = this->get_value<T>(value, arg, sub_type);
+            std::string error_message = Args::get_value<T>(value, arg, sub_type);
 
             if (error_message.length() > 0)
             {
@@ -264,6 +143,125 @@ namespace ArgParser
             return *this;
         }
     };
+
+    template <>
+    static std::string Args::get_value(
+        std::uint16_t &value,
+        const v8::Local<v8::Value> &arg,
+        SubType checking_for)
+    {
+        if (!arg->IsNumber())
+        {
+            return "must be a number.";
+        }
+
+        auto isolate = v8::Isolate::GetCurrent();
+        auto as_number = arg->IntegerValue(isolate->GetCurrentContext()).FromJust();
+
+        if (as_number < 0)
+        {
+            std::stringstream ss;
+            ss << "is negative, must be positive (" << as_number << ").";
+            return ss.str();
+        }
+
+        if (as_number > UINT16_MAX)
+        {
+            std::stringstream ss;
+            ss << as_number << " beyond max port range of "
+               << UINT16_MAX << ".";
+            return ss.str();
+        }
+
+        value = static_cast<std::uint16_t>(as_number);
+        return "";
+    }
+
+    template <>
+    static std::string Args::get_value(
+        bool &value,
+        const v8::Local<v8::Value> &arg,
+        SubType checking_for)
+    {
+        if (!arg->IsBoolean())
+        {
+            return "must be a boolean.";
+        }
+
+        auto boolean = arg->IsTrue();
+        value = boolean;
+        return "";
+    }
+
+    template <>
+    static std::string Args::get_value(
+        NL::IPVer &value,
+        const v8::Local<v8::Value> &arg,
+        SubType checking_for)
+    {
+        std::string invalid_string("must be an ip version string either 'IPv4' or 'IPv6'.");
+        if (!arg->IsString())
+        {
+            return invalid_string;
+        }
+
+        Nan::Utf8String utf8_string(arg);
+        std::string str(*utf8_string);
+
+        if (str.compare("IPv6") == 0)
+        {
+            value = NL::IPVer::IP6;
+        }
+        else if (str.compare("IPv4") == 0)
+        {
+            value = NL::IPVer::IP4;
+        }
+        else
+        {
+            std::stringstream ss;
+            ss << invalid_string << " Got: '" << str << "'.";
+            return ss.str();
+        }
+
+        return "";
+    }
+
+    template <>
+    static std::string Args::get_value(
+        std::string &value,
+        const v8::Local<v8::Value> &arg,
+        SubType checking_for)
+    {
+        auto is_string = arg->IsString();
+        if (checking_for != SubType::SendableData && !is_string)
+        {
+            return "must be a string";
+        }
+
+        if (is_string)
+        {
+            Nan::Utf8String utf8_str(arg);
+            value = std::string(*utf8_str);
+        }
+        else if (arg->IsUint8Array())
+        {
+            auto typed_array = arg.As<v8::TypedArray>();
+            Nan::TypedArrayContents<char> contents(typed_array);
+            value = std::string(*contents, contents.length());
+        }
+        else if (node::Buffer::HasInstance(arg))
+        {
+            auto buffer = node::Buffer::Data(arg);
+            auto length = node::Buffer::Length(arg);
+            value = std::string(buffer, length);
+        }
+        else
+        {
+            return "must be a string, Buffer, or Uint8Array";
+        }
+
+        return "";
+    }
 }; // namespace ArgParser
 
 #endif
