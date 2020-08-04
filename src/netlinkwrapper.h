@@ -23,13 +23,13 @@ private:
     static v8::Persistent<v8::FunctionTemplate> class_socket_tcp_server;
     static v8::Persistent<v8::FunctionTemplate> class_socket_udp;
 
-    // classes
+    /* -- Class Constructors -- */
     static void new_base(const v8::FunctionCallbackInfo<v8::Value> &args);
     static void new_tcp_client(const v8::FunctionCallbackInfo<v8::Value> &args);
     static void new_tcp_server(const v8::FunctionCallbackInfo<v8::Value> &args);
     static void new_udp(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-    // methods
+    /* -- Methods -- */
     static void accept(const v8::FunctionCallbackInfo<v8::Value> &args);
     static void disconnect(const v8::FunctionCallbackInfo<v8::Value> &args);
     static void receive(const v8::FunctionCallbackInfo<v8::Value> &args);
@@ -38,20 +38,7 @@ private:
     static void send(const v8::FunctionCallbackInfo<v8::Value> &args);
     static void send_to(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-    // getters
-    static void is_blocking(const v8::FunctionCallbackInfo<v8::Value> &args);
-    static void is_client(const v8::FunctionCallbackInfo<v8::Value> &args);
-    static void is_destroyed(const v8::FunctionCallbackInfo<v8::Value> &args);
-    static void is_ipv4(const v8::FunctionCallbackInfo<v8::Value> &args);
-    static void is_ipv6(const v8::FunctionCallbackInfo<v8::Value> &args);
-    static void is_server(const v8::FunctionCallbackInfo<v8::Value> &args);
-    static void is_tcp(const v8::FunctionCallbackInfo<v8::Value> &args);
-    static void is_udp(const v8::FunctionCallbackInfo<v8::Value> &args);
-
-    static void getter(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value> &info);
-
     /* -- Getters -- */
-
     static void getter_host_from(
         v8::Local<v8::String>,
         const v8::PropertyCallbackInfo<v8::Value> &info);
@@ -79,7 +66,6 @@ private:
         const v8::PropertyCallbackInfo<v8::Value> &info);
 
     /* -- Setters -- */
-
     static void setter_throw_exception(
         v8::Local<v8::String>,
         v8::Local<v8::Value>,
