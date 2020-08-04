@@ -26,7 +26,7 @@ namespace GetValue
     }
 
     template <>
-    static std::string get_value(
+    std::string get_value(
         std::uint16_t &value,
         const v8::Local<v8::Value> &arg,
         SubType sub_type)
@@ -59,7 +59,7 @@ namespace GetValue
     }
 
     template <>
-    static std::string get_value(
+    std::string get_value(
         bool &value,
         const v8::Local<v8::Value> &arg,
         SubType sub_type)
@@ -75,7 +75,7 @@ namespace GetValue
     }
 
     template <>
-    static std::string get_value(
+    std::string get_value(
         NL::IPVer &value,
         const v8::Local<v8::Value> &arg,
         SubType sub_type)
@@ -108,7 +108,7 @@ namespace GetValue
     }
 
     template <>
-    static std::string get_value(
+    std::string get_value(
         std::string &value,
         const v8::Local<v8::Value> &arg,
         SubType sub_type)
