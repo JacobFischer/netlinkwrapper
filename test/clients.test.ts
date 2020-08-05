@@ -2,7 +2,7 @@ import { expect } from "chai";
 import { fork } from "child_process";
 import { join, resolve } from "path";
 import { TextEncoder } from "util";
-import { TesterClientTCP, TesterUDP } from "./utils";
+import { badArg, TesterClientTCP, TesterUDP } from "./utils";
 import { NetLinkSocketClientTCP, NetLinkSocketUDP } from "../lib";
 
 describe("clients shared functionality", function () {
@@ -11,7 +11,7 @@ describe("clients shared functionality", function () {
             const testing = new Tester(this);
 
             const send = (
-                data: string | Buffer | Uint8Array,
+                data: string | Buffer | Uint8Array = testing.str,
                 client = testing.netLink,
             ) => {
                 if (client instanceof NetLinkSocketUDP) {
@@ -67,6 +67,10 @@ describe("clients shared functionality", function () {
 
                 const read = receive();
                 expect(read?.toString()).to.equal(testing.str);
+            });
+
+            it("cannot send invalid date", function () {
+                expect(() => send(badArg())).to.throw();
             });
 
             it("can do non blocking reads", function () {
@@ -142,6 +146,16 @@ describe("clients shared functionality", function () {
                 expect(sent.from).to.exist;
                 expect(client.isIPv6).to.be.true;
                 client.disconnect();
+            });
+
+            it("cannot receive once disconnected", function () {
+                testing.netLink.disconnect();
+                expect(() => receive()).to.throw();
+            });
+
+            it("cannot send once disconnected", function () {
+                testing.netLink.disconnect();
+                expect(() => send()).to.throw();
             });
         });
     }

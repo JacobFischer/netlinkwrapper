@@ -31,6 +31,12 @@ describe("TCP Server functionality", function () {
         client?.disconnect();
     });
 
+    it("cannot accept clients once disconnected", function () {
+        testing.netLink.disconnect();
+
+        expect(() => testing.netLink.accept()).to.throw();
+    });
+
     it("can send and receive data to the client", async function () {
         const client = testing.netLink.accept();
 

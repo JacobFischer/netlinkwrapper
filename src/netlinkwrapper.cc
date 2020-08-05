@@ -695,6 +695,10 @@ void NetLinkWrapper::setter_is_blocking(
     }
 
     auto obj = node::ObjectWrap::Unwrap<NetLinkWrapper>(info.Holder());
+    if (obj->throw_if_destroyed())
+    {
+        return;
+    }
 
     const auto blocking = value->IsTrue();
     try

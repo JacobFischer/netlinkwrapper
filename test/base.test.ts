@@ -53,6 +53,14 @@ describe("base sockets", function () {
                 }).to.throw();
             });
 
+            it("cannot set isBlocking after disconnecting", function () {
+                testing.netLink.disconnect();
+                expect(testing.netLink.isDestroyed).to.be.true;
+                expect(() => {
+                    testing.netLink.isBlocking = true;
+                }).to.throw();
+            });
+
             it("can get portFrom", function () {
                 const portFrom = testing.netLink.portFrom;
                 expect(typeof portFrom).to.equal("number");
@@ -79,6 +87,12 @@ describe("base sockets", function () {
                 expect(() => {
                     testing.settableNetLink.isDestroyed = badArg();
                 }).to.throw();
+            });
+
+            it("cannot disconnect after disconnecting", function () {
+                testing.netLink.disconnect();
+                expect(testing.netLink.isDestroyed).to.be.true;
+                expect(() => testing.netLink.disconnect()).to.throw();
             });
 
             it("can get isIPv4", function () {

@@ -123,13 +123,14 @@ export abstract class Tester<
             seenIds.add(id);
         }
 
-        const port = minPort + (Math.abs(hashString(id)) % deltaPort);
-        if (seenPorts.has(port)) {
-            throw new Error(
-                `Duplicate port detected in test '${id}': ${port}`,
-            );
-        } else {
-            seenPorts.add(port);
+        let port = minPort + (Math.abs(hashString(id)) % deltaPort);
+        while (seenPorts.has(port) && port <= maxPort) {
+            port += 1;
+        }
+        seenPorts.add(port);
+
+        if (port > maxPort) {
+            throw new Error(`Cannot find unused port for '${id}': ${port}`);
         }
 
         this.host = "localhost";
