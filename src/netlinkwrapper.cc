@@ -349,13 +349,18 @@ void NetLinkWrapper::disconnect(const v8::FunctionCallbackInfo<v8::Value> &args)
 
     try
     {
-        auto size = obj->socket->nextReadSize();
-        if (size > 0)
+        // TCP server never directly reads from the socket, attempting to do so
+        // on Linux will throw an exception. Windows ignores it.
+        if (!(obj->socket->protocol() == NL::Protocol::TCP && obj->socket->type() == NL::SocketType::SERVER))
         {
-            // we need to drain the socket. Otherwise it will hang on closing the
-            // socket if there is still data in the buffer.
-            auto buffer = std::vector<char>(size);
-            obj->socket->read(buffer.data(), size);
+            auto size = obj->socket->nextReadSize();
+            if (size > 0)
+            {
+                // we need to drain the socket. Otherwise it will hang on closing the
+                // socket if there is still data in the buffer.
+                auto buffer = std::vector<char>(size);
+                obj->socket->read(buffer.data(), size);
+            }
         }
     }
     catch (NL::Exception &err)
