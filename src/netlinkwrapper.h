@@ -1,9 +1,11 @@
 #ifndef NETLINKOBJECT_H
 #define NETLINKOBJECT_H
 
+#include <cstdint>
 #include <node.h>
 #include <node_object_wrap.h>
 #include <memory>
+#include <string>
 #include "netlink/socket.h"
 
 class NetLinkWrapper : public node::ObjectWrap
@@ -15,8 +17,19 @@ private:
     std::unique_ptr<NL::Socket> socket;
     bool destroyed = false;
 
+    // accessed via getters, so we cache them here
+    bool blocking = true;
+    NL::IPVer ip_version;
+
+    std::uint16_t port_from;
+    std::string host_from;
+    std::uint16_t port_to;
+    std::string host_to;
+
     explicit NetLinkWrapper(NL::Socket *socket);
     ~NetLinkWrapper();
+
+    bool throw_if_destroyed();
 
     static v8::Persistent<v8::FunctionTemplate> class_socket_base;
     static v8::Persistent<v8::FunctionTemplate> class_socket_tcp_client;

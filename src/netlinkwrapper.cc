@@ -47,11 +47,33 @@ void throw_js_error(NL::Exception &err)
 NetLinkWrapper::NetLinkWrapper(NL::Socket *socket)
 {
     this->socket = std::unique_ptr<NL::Socket>(socket);
+    this->destroyed = false;
+
+    this->blocking = this->socket->blocking();
+    this->ip_version = this->socket->ipVer();
+
+    this->port_from = this->socket->portFrom();
+    this->host_from = this->socket->hostFrom();
+    this->port_to = this->socket->portTo();
+    this->host_to = this->socket->hostTo();
 }
 
 NetLinkWrapper::~NetLinkWrapper()
 {
     this->socket.reset();
+}
+
+bool NetLinkWrapper::throw_if_destroyed()
+{
+    if (!this->destroyed)
+    {
+        return false;
+    }
+
+    auto isolate = v8::Isolate::GetCurrent();
+    auto v8_val = v8_str("Cannot use NetLinkSocket that has already been destroyed.");
+    isolate->ThrowException(v8::Exception::Error(v8_val));
+    return true;
 }
 
 void NetLinkWrapper::init(v8::Local<v8::Object> exports)
@@ -155,6 +177,8 @@ void NetLinkWrapper::init(v8::Local<v8::Object> exports)
     class_socket_tcp_server.Reset(isolate, v8::Persistent<v8::FunctionTemplate>(isolate, tcp_server_template));
     class_socket_udp.Reset(isolate, v8::Persistent<v8::FunctionTemplate>(isolate, udp_template));
 }
+
+/* -- JS Constructors -- */
 
 void NetLinkWrapper::new_base(const v8::FunctionCallbackInfo<v8::Value> &args)
 {
@@ -279,9 +303,15 @@ void NetLinkWrapper::new_tcp_server(const v8::FunctionCallbackInfo<v8::Value> &a
     args.GetReturnValue().Set(args.This());
 }
 
+/* -- JS methods -- */
+
 void NetLinkWrapper::accept(const v8::FunctionCallbackInfo<v8::Value> &args)
 {
     auto obj = node::ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
+    if (obj->throw_if_destroyed())
+    {
+        return;
+    }
 
     NL::Socket *accepted = NULL;
     try
@@ -312,6 +342,10 @@ void NetLinkWrapper::accept(const v8::FunctionCallbackInfo<v8::Value> &args)
 void NetLinkWrapper::disconnect(const v8::FunctionCallbackInfo<v8::Value> &args)
 {
     auto obj = node::ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
+    if (obj->throw_if_destroyed())
+    {
+        return;
+    }
 
     try
     {
@@ -346,6 +380,10 @@ void NetLinkWrapper::disconnect(const v8::FunctionCallbackInfo<v8::Value> &args)
 void NetLinkWrapper::receive(const v8::FunctionCallbackInfo<v8::Value> &args)
 {
     auto obj = node::ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
+    if (obj->throw_if_destroyed())
+    {
+        return;
+    }
 
     int next_read_size = 0;
     bool blocking = false;
@@ -403,6 +441,10 @@ void NetLinkWrapper::receive(const v8::FunctionCallbackInfo<v8::Value> &args)
 void NetLinkWrapper::receive_from(const v8::FunctionCallbackInfo<v8::Value> &args)
 {
     auto obj = node::ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
+    if (obj->throw_if_destroyed())
+    {
+        return;
+    }
 
     std::stringstream read_ss;
     std::string host_from = "";
@@ -462,9 +504,15 @@ void NetLinkWrapper::set_blocking(const v8::FunctionCallbackInfo<v8::Value> &arg
         return;
     }
 
+    auto obj = node::ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
+    if (obj->throw_if_destroyed())
+    {
+        return;
+    }
+
     try
     {
-        auto obj = node::ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
+
         obj->socket->blocking(blocking);
     }
     catch (NL::Exception &err)
@@ -484,9 +532,15 @@ void NetLinkWrapper::send(const v8::FunctionCallbackInfo<v8::Value> &args)
         return;
     }
 
+    auto obj = node::ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
+    if (obj->throw_if_destroyed())
+    {
+        return;
+    }
+
     try
     {
-        auto obj = node::ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
+
         obj->socket->send(data.c_str(), data.length());
     }
     catch (NL::Exception &err)
@@ -511,9 +565,15 @@ void NetLinkWrapper::send_to(const v8::FunctionCallbackInfo<v8::Value> &args)
         return;
     }
 
+    auto obj = node::ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
+    if (obj->throw_if_destroyed())
+    {
+        return;
+    }
+
     try
     {
-        auto obj = node::ObjectWrap::Unwrap<NetLinkWrapper>(args.Holder());
+
         obj->socket->sendTo(data.c_str(), data.length(), host, port);
     }
     catch (NL::Exception &err)
@@ -531,32 +591,15 @@ void NetLinkWrapper::getter_is_blocking(
 {
 
     auto obj = node::ObjectWrap::Unwrap<NetLinkWrapper>(info.Holder());
-
-    bool blocking = false;
-    try
-    {
-        blocking = obj->socket->blocking();
-    }
-    catch (NL::Exception &err)
-    {
-        throw_js_error(err);
-        return;
-    }
-
-    auto isolate = v8::Isolate::GetCurrent();
-    auto v8_val = v8::Boolean::New(isolate, blocking);
-    info.GetReturnValue().Set(v8_val);
+    info.GetReturnValue().Set(Nan::New(obj->blocking));
 };
 
 void NetLinkWrapper::getter_is_destroyed(
     v8::Local<v8::String>,
     const v8::PropertyCallbackInfo<v8::Value> &info)
 {
-    auto isolate = v8::Isolate::GetCurrent();
     auto obj = node::ObjectWrap::Unwrap<NetLinkWrapper>(info.Holder());
-
-    auto v8_val = v8::Boolean::New(isolate, obj->destroyed);
-    info.GetReturnValue().Set(v8_val);
+    info.GetReturnValue().Set(Nan::New(obj->destroyed));
 };
 
 void NetLinkWrapper::getter_is_ipv4(
@@ -564,21 +607,8 @@ void NetLinkWrapper::getter_is_ipv4(
     const v8::PropertyCallbackInfo<v8::Value> &info)
 {
     auto obj = node::ObjectWrap::Unwrap<NetLinkWrapper>(info.Holder());
-
-    NL::IPVer ip_version;
-    try
-    {
-        ip_version = obj->socket->ipVer();
-    }
-    catch (NL::Exception &err)
-    {
-        throw_js_error(err);
-        return;
-    }
-
-    auto isolate = v8::Isolate::GetCurrent();
-    auto v8_val = v8::Boolean::New(isolate, ip_version == NL::IPVer::IP4);
-    info.GetReturnValue().Set(v8_val);
+    bool is_ipv4 = obj->ip_version == NL::IPVer::IP4;
+    info.GetReturnValue().Set(Nan::New(is_ipv4));
 };
 
 void NetLinkWrapper::getter_is_ipv6(
@@ -586,21 +616,8 @@ void NetLinkWrapper::getter_is_ipv6(
     const v8::PropertyCallbackInfo<v8::Value> &info)
 {
     auto obj = node::ObjectWrap::Unwrap<NetLinkWrapper>(info.Holder());
-
-    NL::IPVer ip_version;
-    try
-    {
-        ip_version = obj->socket->ipVer();
-    }
-    catch (NL::Exception &err)
-    {
-        throw_js_error(err);
-        return;
-    }
-
-    auto isolate = v8::Isolate::GetCurrent();
-    auto v8_val = v8::Boolean::New(isolate, ip_version == NL::IPVer::IP6);
-    info.GetReturnValue().Set(v8_val);
+    bool is_ipv6 = obj->ip_version == NL::IPVer::IP6;
+    info.GetReturnValue().Set(Nan::New(is_ipv6));
 };
 
 void NetLinkWrapper::getter_host_from(
@@ -608,20 +625,7 @@ void NetLinkWrapper::getter_host_from(
     const v8::PropertyCallbackInfo<v8::Value> &info)
 {
     auto obj = node::ObjectWrap::Unwrap<NetLinkWrapper>(info.Holder());
-
-    std::string host_from;
-    try
-    {
-        host_from = obj->socket->hostTo();
-    }
-    catch (NL::Exception &err)
-    {
-        throw_js_error(err);
-        return;
-    }
-
-    auto v8_val = v8_str(host_from);
-    info.GetReturnValue().Set(v8_val);
+    info.GetReturnValue().Set(v8_str(obj->host_from));
 };
 
 void NetLinkWrapper::getter_host_to(
@@ -629,20 +633,7 @@ void NetLinkWrapper::getter_host_to(
     const v8::PropertyCallbackInfo<v8::Value> &info)
 {
     auto obj = node::ObjectWrap::Unwrap<NetLinkWrapper>(info.Holder());
-
-    std::string host_to;
-    try
-    {
-        host_to = obj->socket->hostTo();
-    }
-    catch (NL::Exception &err)
-    {
-        throw_js_error(err);
-        return;
-    }
-
-    auto v8_val = v8_str(host_to);
-    info.GetReturnValue().Set(v8_val);
+    info.GetReturnValue().Set(v8_str(obj->host_to));
 };
 
 void NetLinkWrapper::getter_port_from(
@@ -650,21 +641,7 @@ void NetLinkWrapper::getter_port_from(
     const v8::PropertyCallbackInfo<v8::Value> &info)
 {
     auto obj = node::ObjectWrap::Unwrap<NetLinkWrapper>(info.Holder());
-
-    unsigned int port_from = 0;
-    try
-    {
-        port_from = obj->socket->portFrom();
-    }
-    catch (NL::Exception &err)
-    {
-        throw_js_error(err);
-        return;
-    }
-
-    auto isolate = v8::Isolate::GetCurrent();
-    auto v8_val = v8::Integer::New(isolate, port_from);
-    info.GetReturnValue().Set(v8_val);
+    info.GetReturnValue().Set(Nan::New(obj->port_from));
 };
 
 void NetLinkWrapper::getter_port_to(
@@ -672,24 +649,10 @@ void NetLinkWrapper::getter_port_to(
     const v8::PropertyCallbackInfo<v8::Value> &info)
 {
     auto obj = node::ObjectWrap::Unwrap<NetLinkWrapper>(info.Holder());
-
-    unsigned int port_to = 0;
-    try
-    {
-        port_to = obj->socket->portTo();
-    }
-    catch (NL::Exception &err)
-    {
-        throw_js_error(err);
-        return;
-    }
-
-    auto isolate = v8::Isolate::GetCurrent();
-    auto v8_val = v8::Integer::New(isolate, port_to);
-    info.GetReturnValue().Set(v8_val);
+    info.GetReturnValue().Set(Nan::New(obj->port_to));
 };
 
-// -- Setters --
+/* -- Setters -- */
 
 void NetLinkWrapper::setter_throw_exception(
     v8::Local<v8::String> property,
@@ -735,4 +698,6 @@ void NetLinkWrapper::setter_is_blocking(
         throw_js_error(err);
         return;
     }
+
+    obj->blocking = blocking;
 }
