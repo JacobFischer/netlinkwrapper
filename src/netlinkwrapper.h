@@ -4,7 +4,6 @@
 #include <cstdint>
 #include <node.h>
 #include <node_object_wrap.h>
-#include <memory>
 #include <string>
 #include "netlink/socket.h"
 
@@ -14,8 +13,7 @@ public:
     static void init(v8::Local<v8::Object> exports);
 
 private:
-    std::unique_ptr<NL::Socket> socket;
-    bool destroyed = false;
+    NL::Socket *socket;
 
     // accessed via getters, so we cache them here
     bool blocking = true;

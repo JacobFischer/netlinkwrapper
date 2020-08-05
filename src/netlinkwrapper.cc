@@ -46,8 +46,7 @@ void throw_js_error(NL::Exception &err)
 
 NetLinkWrapper::NetLinkWrapper(NL::Socket *socket)
 {
-    this->socket = std::unique_ptr<NL::Socket>(socket);
-    this->destroyed = false;
+    this->socket = socket;
 
     this->blocking = this->socket->blocking();
     this->ip_version = this->socket->ipVer();
@@ -60,12 +59,16 @@ NetLinkWrapper::NetLinkWrapper(NL::Socket *socket)
 
 NetLinkWrapper::~NetLinkWrapper()
 {
-    this->socket.reset();
+    if (this->socket != nullptr)
+    {
+        delete this->socket;
+        this->socket = nullptr;
+    }
 }
 
 bool NetLinkWrapper::throw_if_destroyed()
 {
-    if (!this->destroyed)
+    if (this->socket != nullptr)
     {
         return false;
     }
@@ -369,17 +372,18 @@ void NetLinkWrapper::disconnect(const v8::FunctionCallbackInfo<v8::Value> &args)
         return;
     }
 
-    obj->destroyed = true;
-
     try
     {
         obj->socket->disconnect();
+        delete obj->socket;
     }
     catch (NL::Exception &err)
     {
         throw_js_error(err);
         return;
     }
+
+    obj->socket = nullptr;
 }
 
 void NetLinkWrapper::receive(const v8::FunctionCallbackInfo<v8::Value> &args)
@@ -604,7 +608,7 @@ void NetLinkWrapper::getter_is_destroyed(
     const v8::PropertyCallbackInfo<v8::Value> &info)
 {
     auto obj = node::ObjectWrap::Unwrap<NetLinkWrapper>(info.Holder());
-    info.GetReturnValue().Set(Nan::New(obj->destroyed));
+    info.GetReturnValue().Set(Nan::New(obj->socket == nullptr));
 };
 
 void NetLinkWrapper::getter_is_ipv4(
