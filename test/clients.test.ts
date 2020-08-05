@@ -1,6 +1,6 @@
 import { expect } from "chai";
-// import { fork } from "child_process";
-// import { join, resolve } from "path";
+import { fork } from "child_process";
+import { join, resolve } from "path";
 import { TextEncoder } from "util";
 import { TesterClientTCP, TesterUDP } from "./utils";
 import { NetLinkSocketClientTCP, NetLinkSocketUDP } from "../lib";
@@ -77,7 +77,6 @@ describe("clients shared functionality", function () {
                 expect(read).to.be.undefined;
             });
 
-            /*
             it("can do blocking reads", async function () {
                 // Slow because child process need ts-node transpiling on the fly
                 this.timeout(10_000);
@@ -122,7 +121,6 @@ describe("clients shared functionality", function () {
                 );
                 expect(code).to.equal(0);
             });
-            */
 
             it("can be IPv6", async function () {
                 const sentData = testing.echo.events.sentData.once();
