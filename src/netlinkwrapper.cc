@@ -6,7 +6,6 @@
 #include <limits>
 #include <nan.h>
 #include <sstream>
-#include <vector>
 #include "arg_parser.h"
 #include "get_value.h"
 #include "netlinkwrapper.h"
@@ -61,6 +60,7 @@ NetLinkWrapper::~NetLinkWrapper()
 {
     if (this->socket != nullptr)
     {
+        this->socket->disconnect();
         delete this->socket;
         this->socket = nullptr;
     }
@@ -361,8 +361,9 @@ void NetLinkWrapper::disconnect(const v8::FunctionCallbackInfo<v8::Value> &args)
             {
                 // we need to drain the socket. Otherwise it will hang on closing the
                 // socket if there is still data in the buffer.
-                auto buffer = std::vector<char>(size);
-                obj->socket->read(buffer.data(), size);
+                char *buffer = new char[size + 1];
+                obj->socket->read(buffer, size);
+                delete[] buffer;
             }
         }
     }
