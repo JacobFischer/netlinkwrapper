@@ -14,6 +14,8 @@ const netLink =
         ? new NetLinkSocketUDP()
         : new NetLinkSocketClientTCP(port, host);
 
+netLink.isBlocking = true;
+
 let echoedString: string | -1 = -1;
 if (netLink instanceof NetLinkSocketClientTCP) {
     netLink.send(testString);

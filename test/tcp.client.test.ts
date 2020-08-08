@@ -11,7 +11,7 @@ import {
 
 describe("TCP Client", function () {
     it("throws when it cannot connect to a server", function () {
-        this.timeout(30_000);
+        this.timeout(2 * 60 * 1_000);
 
         expect(
             () => new NetLinkSocketClientTCP(1234, badIPAddress),
