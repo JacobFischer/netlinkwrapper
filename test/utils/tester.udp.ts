@@ -1,7 +1,7 @@
 import { createSocket, RemoteInfo } from "dgram";
 import { EchoSocket } from "./echo-socket";
-import { Tester } from "./tester";
 import { NetLinkSocketUDP } from "../../lib";
+import { Tester, getNextTestingPort } from "./tester";
 
 // upd6 will accept IPv4/6 connections so it is ideal for testing with
 const newUDP = () => createSocket({ type: "udp6" });
@@ -9,7 +9,12 @@ const newUDP = () => createSocket({ type: "udp6" });
 export class EchoUDP extends EchoSocket<RemoteInfo> {
     private socket = newUDP();
 
-    public start(data: { port: number }): Promise<void> {
+    private port = 1;
+    public getPort(): number {
+        return this.port;
+    }
+
+    public start(): Promise<void> {
         return new Promise((resolve) => {
             // eslint-disable-next-line @typescript-eslint/no-misused-promises
             this.socket.on("message", async (buffer, remote) => {
@@ -44,7 +49,8 @@ export class EchoUDP extends EchoSocket<RemoteInfo> {
                 });
             });
 
-            this.socket.bind(data.port, resolve);
+            this.port = getNextTestingPort();
+            this.socket.bind(this.port, resolve);
         });
     }
 
@@ -58,10 +64,6 @@ export class EchoUDP extends EchoSocket<RemoteInfo> {
     }
 }
 
-export class TesterUDP extends Tester<NetLinkSocketUDP, EchoUDP> {
-    public static readonly tests = "UDP";
-
-    constructor(suite: Mocha.Suite) {
-        super(suite, new EchoUDP(), () => new NetLinkSocketUDP());
-    }
-}
+export const udpTester = new Tester(NetLinkSocketUDP, EchoUDP, {
+    newPermute: ["host", "port"],
+});

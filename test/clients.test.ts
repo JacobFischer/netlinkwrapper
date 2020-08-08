@@ -2,20 +2,23 @@ import { expect } from "chai";
 import { fork } from "child_process";
 import { join, resolve } from "path";
 import { TextEncoder } from "util";
-import { badArg, TesterClientTCP, TesterUDP } from "./utils";
-import { NetLinkSocketClientTCP, NetLinkSocketUDP } from "../lib";
+import { badArg, tcpClientTester, udpTester, EchoUDP } from "./utils";
+import { NetLinkSocketUDP } from "../lib";
 
-describe("clients shared functionality", function () {
-    for (const Tester of [TesterClientTCP, TesterUDP]) {
-        describe(Tester.tests, function () {
-            const testing = new Tester(this);
+describe("client shared functionality", function () {
+    for (const tester of [tcpClientTester, udpTester]) {
+        tester.testPermutations((testing: typeof tester.testing) => {
+            const echoPort = () =>
+                testing.echo instanceof EchoUDP
+                    ? testing.echo.getPort()
+                    : testing.port;
 
             const send = (
                 data: string | Buffer | Uint8Array = testing.str,
                 client = testing.netLink,
             ) => {
                 if (client instanceof NetLinkSocketUDP) {
-                    client.sendTo(testing.host, testing.port, data);
+                    client.sendTo(testing.host, echoPort(), data);
                 } else {
                     client.send(data);
                 }
@@ -73,16 +76,30 @@ describe("clients shared functionality", function () {
                 expect(() => send(badArg())).to.throw();
             });
 
+            it("can do blocking reads", async function () {
+                testing.netLink.isBlocking = true;
+                expect(testing.netLink.isBlocking).to.be.true;
+
+                // shouldn't block here, nothing to read, returns undefined
+                const sentPromise = testing.echo.events.sentData.once();
+                send(testing.str);
+                const sent = await sentPromise; // now it should be echoed back
+                expect(sent.buffer.toString()).to.equal(testing.str);
+                const read = receive();
+                expect(read?.toString()).to.equal(testing.str);
+            });
+
             it("can do non blocking reads", function () {
                 testing.netLink.isBlocking = false;
+                expect(testing.netLink.isBlocking).to.be.false;
 
                 // shouldn't block here, nothing to read, returns undefined
                 const read = receive();
                 expect(read).to.be.undefined;
             });
 
-            it("can do blocking reads", async function () {
-                // Slow because child process need ts-node transpiling on the fly
+            it("can do truly blocking read", async function () {
+                // Slow because child process needs to run TS code on the fly
                 this.timeout(10_000);
 
                 const testString = "Hello worker thread!";
@@ -93,11 +110,15 @@ describe("clients shared functionality", function () {
                 const workerPath = resolve(
                     join(__dirname, "./client.worker.ts"),
                 );
+
                 const worker = fork(workerPath, [], {
                     env: {
-                        testPort: String(testing.port),
+                        testPort: String(echoPort()),
                         testString,
-                        testType: Tester.tests,
+                        testType:
+                            testing.netLink instanceof NetLinkSocketUDP
+                                ? "UDP"
+                                : "TCP",
                     },
                     execArgv: ["-r", "ts-node/register"],
                 });
@@ -124,28 +145,6 @@ describe("clients shared functionality", function () {
                     }),
                 );
                 expect(code).to.equal(0);
-            });
-
-            it("can be IPv6", async function () {
-                const sentData = testing.echo.events.sentData.once();
-                const localhostIPv6 = "::1";
-                const client =
-                    testing.netLink instanceof NetLinkSocketUDP
-                        ? new NetLinkSocketUDP(undefined, undefined, "IPv6")
-                        : new NetLinkSocketClientTCP(
-                              testing.port,
-                              localhostIPv6,
-                              "IPv6",
-                          );
-
-                send("Hello!", client);
-                const sent = await sentData;
-                // server always sees IPv6 addresses so no need to check
-                // getting data means it formed the connection,
-                // thus the IPv6 address works
-                expect(sent.from).to.exist;
-                expect(client.isIPv6).to.be.true;
-                client.disconnect();
             });
 
             it("cannot receive once disconnected", function () {

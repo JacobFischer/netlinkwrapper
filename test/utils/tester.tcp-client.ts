@@ -1,13 +1,13 @@
 import { Server, Socket as SocketTCP } from "net";
 import { EchoSocket } from "./echo-socket";
-import { Tester } from "./tester";
 import { NetLinkSocketClientTCP } from "../../lib";
+import { Tester } from "./tester";
 
 /**
  * A simple Echo Server for testing.
  * Basically async/await syntax for clearer testing code.
  */
-export class EchoServerTCP extends EchoSocket<SocketTCP> {
+export class EchoClientTCP extends EchoSocket<SocketTCP> {
     private readonly server: Server;
 
     constructor() {
@@ -57,21 +57,7 @@ export class EchoServerTCP extends EchoSocket<SocketTCP> {
     }
 }
 
-export class TesterClientTCP extends Tester<
+export const tcpClientTester = new Tester(
     NetLinkSocketClientTCP,
-    EchoServerTCP
-> {
-    public static readonly tests = "TCP Client";
-
-    constructor(suite: Mocha.Suite) {
-        super(
-            suite,
-            new EchoServerTCP(),
-            ({ port, host }) => new NetLinkSocketClientTCP(port, host),
-            true,
-            async ({ echo }) => {
-                await echo.events.newConnection.once();
-            },
-        );
-    }
-}
+    EchoClientTCP,
+);

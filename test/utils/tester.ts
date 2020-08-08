@@ -1,41 +1,38 @@
 import { EchoSocket } from "./echo-socket";
 import { NetLinkSocketBase } from "../../lib";
+import { permutations } from "./permutations";
+import { badArg } from "./bad-arg";
 
 type Writeable<T> = { -readonly [P in keyof T]: T[P] };
 
+let nextPort = 50_000;
+
 /**
- * Converts a string to a semi-unique hash number.
+ * Gets the next testing port. Use this to ensure each test has a unique port.
  *
- * @param str - String to hash.
- * @returns A semi-unique number.
+ * @returns A number representing a port to test on.
  */
-function hashString(str: string): number {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-        const chr = str.charCodeAt(i);
-        hash = (hash << 5) - hash + chr;
-        hash |= 0; // Convert to 32bit integer
+export function getNextTestingPort(): number {
+    const result = nextPort;
+    nextPort += 1;
+    if (nextPort > 60_000) {
+        // something went really wrong
+        throw new Error("Too many ports used!");
     }
-    return hash;
+
+    return result;
 }
 
-const minPort = 10_000;
-const maxPort = 60_000;
-
-const deltaPort = maxPort - minPort;
-
-export type BaseContainer = {
-    host: string;
-    port: number;
-    str: string;
-};
-
 const seenIds = new Set<string>();
-const seenPorts = new Set<number>();
-export const hashTestingDataInto = (
-    context: Mocha.Context,
-    container: BaseContainer,
-): void => {
+
+/**
+ * Gets the test string to help ensure each string being sent is unique and
+ * not repeated.
+ *
+ * @param context - The current mocha context.
+ * @returns A string to use for testing as a data payload.
+ */
+function getTestingString(context: Mocha.Context): string {
     const id = context.currentTest?.fullTitle();
     if (!id) {
         throw new Error(`Cannot get full title for ${String(context)}`);
@@ -47,94 +44,133 @@ export const hashTestingDataInto = (
         seenIds.add(id);
     }
 
-    const port = minPort + (Math.abs(hashString(id)) % deltaPort);
-    if (seenPorts.has(port)) {
-        throw new Error(`Duplicate port detected in test '${id}': ${port}`);
-    } else {
-        seenPorts.add(port);
-    }
+    return id;
+}
 
-    container.host = "localhost";
-    container.port = port;
-    container.str = id;
-};
-
-export abstract class Tester<
+export type BaseTesting<
     TNetLink extends NetLinkSocketBase,
-    TEcho extends EchoSocket
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    TEchoSocket extends EchoSocket<any>
+> = Readonly<{
+    host: string;
+    port: number;
+    ipVersion: "IPv4" | "IPv6";
+    constructorArgs: {
+        host: string | undefined;
+        port: number | undefined;
+        ipVersion: "IPv4" | "IPv6" | undefined;
+    };
+    str: string;
+    netLink: TNetLink;
+    echo: TEchoSocket;
+    settableNetLink: Writeable<TNetLink>;
+}>;
+
+export class Tester<
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    TNetLinkClass extends { new (...args: any[]): NetLinkSocketBase },
+    TEchoSocketClass extends {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        new (...args: any[]): TEchoSocket;
+    },
+    TNetLink extends NetLinkSocketBase = InstanceType<TNetLinkClass>,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    TEchoSocket extends EchoSocket<any> = InstanceType<TEchoSocketClass>,
+    TTesting extends BaseTesting<TNetLink, TEchoSocket> = BaseTesting<
+        TNetLink,
+        TEchoSocket
+    >
 > {
-    public host: string;
-    public port: number;
-    public str: string;
-
-    public netLink!: TNetLink;
-    public echo: TEcho;
-    public settableNetLink!: Writeable<TNetLink>;
-
-    public static readonly tests: string = "";
+    private constructorArgs: [boolean, boolean, "IPv4" | "IPv6" | undefined][];
+    private startEchoAfterNetLink: boolean;
+    private alsoBeforeEach?: (testing: TTesting) => Promise<void>;
+    public testing = badArg<TTesting>();
 
     constructor(
-        suite: Mocha.Suite,
-        echo: TEcho,
-        newNetLink: (arg: { host: string; port: number }) => TNetLink,
-        echoFirst = true,
-        alsoBeforeEach?: (tester: Tester<TNetLink, TEcho>) => Promise<void>,
+        private NetLinkClass: TNetLinkClass,
+        private EchoSocketClass: TEchoSocketClass,
+        options?: {
+            newPermute?: ("port" | "host")[];
+            startEchoAfterNetLink?: boolean;
+            alsoBeforeEach?: (testing: TTesting) => Promise<void>;
+        },
     ) {
-        this.host = "";
-        this.port = 0;
-        this.str = "";
-        this.echo = echo;
+        this.startEchoAfterNetLink = Boolean(options?.startEchoAfterNetLink);
+        this.alsoBeforeEach = options?.alsoBeforeEach;
 
-        // eslint-disable-next-line @typescript-eslint/no-this-alias
-        const self: Tester<TNetLink, TEcho> = this;
-        suite.beforeEach(async function () {
-            self.hash(this);
-
-            if (echoFirst) {
-                await self.echo.start(self);
-            }
-            self.netLink = newNetLink(self);
-            self.settableNetLink = self.netLink;
-            if (!echoFirst) {
-                await self.echo.start(self);
-            }
-
-            if (alsoBeforeEach) {
-                await alsoBeforeEach(self);
-            }
-        });
-        suite.afterEach(async () => {
-            if (!self.netLink.isDestroyed) {
-                self.netLink.disconnect();
-            }
-            await self.echo.stop();
-        });
+        const permutePort = options?.newPermute?.includes("port");
+        const permuteHost = options?.newPermute?.includes("host");
+        this.constructorArgs = permutations(
+            ...([
+                permutePort ? [true, false] : [true],
+                permuteHost ? [true, false] : [true],
+                ["IPv4", "IPv6", undefined] as const,
+            ] as const),
+        );
     }
 
-    private hash(context: Mocha.Context): void {
-        const id = context.currentTest?.fullTitle();
-        if (!id) {
-            throw new Error(`Cannot get full title for ${String(context)}`);
-        }
+    public testPermutations(callback: (testing: TTesting) => void): void {
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
+        const self = this;
+        describe(`${self.NetLinkClass.name} permutations`, function () {
+            for (const [usePort, useHost, ipVersion] of self.constructorArgs) {
+                const testing = {
+                    host: "localhost",
+                    port: 1,
+                    ipVersion: ipVersion || "IPv4",
+                    constructorArgs: {
+                        host: useHost ? "localhost" : undefined,
+                        port: usePort ? 1 : undefined,
+                        ipVersion,
+                    },
+                    str: "",
+                    netLink: (null as unknown) as TNetLink,
+                    echo: new self.EchoSocketClass(),
+                    settableNetLink: (null as unknown) as Writeable<TNetLink>,
+                } as Writeable<TTesting>;
 
-        if (seenIds.has(id)) {
-            throw new Error(`Duplicate test id detected: '${id}'`);
-        } else {
-            seenIds.add(id);
-        }
+                const withString = `port: ${
+                    usePort ? "number" : "undefined"
+                }, host: ${useHost ? "string" : "undefined"}, ip: ${String(
+                    ipVersion,
+                )}`;
+                describe(`with ${withString}`, function () {
+                    this.beforeEach(async function () {
+                        testing.str = getTestingString(this);
+                        testing.port = getNextTestingPort();
+                        if (testing.constructorArgs.port) {
+                            testing.constructorArgs.port = testing.port;
+                        }
 
-        let port = minPort + (Math.abs(hashString(id)) % deltaPort);
-        while (seenPorts.has(port) && port <= maxPort) {
-            port += 1;
-        }
-        seenPorts.add(port);
+                        if (!self.startEchoAfterNetLink) {
+                            await testing.echo.start(testing);
+                        }
+                        testing.netLink = new self.NetLinkClass(
+                            testing.constructorArgs.port,
+                            testing.constructorArgs.host,
+                            testing.constructorArgs.ipVersion,
+                        ) as TNetLink;
 
-        if (port > maxPort) {
-            throw new Error(`Cannot find unused port for '${id}': ${port}`);
-        }
+                        testing.settableNetLink = testing.netLink;
+                        if (self.startEchoAfterNetLink) {
+                            await testing.echo.start(testing);
+                        }
 
-        this.host = "localhost";
-        this.port = port;
-        this.str = id;
+                        if (self.alsoBeforeEach) {
+                            await self.alsoBeforeEach(testing);
+                        }
+                    });
+
+                    this.afterEach(async () => {
+                        if (testing.netLink && !testing.netLink.isDestroyed) {
+                            testing.netLink.disconnect();
+                        }
+                        await testing.echo.stop();
+                    });
+
+                    callback(testing);
+                });
+            }
+        });
     }
 }

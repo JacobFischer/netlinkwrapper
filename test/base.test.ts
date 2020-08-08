@@ -2,26 +2,15 @@ import { NetLinkSocketBase } from "../lib";
 import {
     badArg,
     EchoSocket,
-    TesterClientTCP,
-    TesterServerTCP,
-    TesterUDP,
+    tcpClientTester,
+    tcpServerTester,
+    udpTester,
 } from "./utils";
 import { expect } from "chai";
 
-const testers = [TesterClientTCP, TesterServerTCP, TesterUDP];
-
-describe("base sockets", function () {
-    it("cannot be constructed as a base class.", function () {
-        expect(() => {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-explicit-any
-            new (NetLinkSocketBase as any)();
-        }).to.throw();
-    });
-
-    for (const Tester of testers) {
-        describe(`${Tester.tests} base functionality`, function () {
-            const testing = new Tester(this);
-
+describe("base functionality", function () {
+    for (const tester of [tcpClientTester, tcpServerTester, udpTester]) {
+        tester.testPermutations((testing: typeof tester.testing) => {
             it("exists", function () {
                 expect(testing.netLink).to.exist;
             });
@@ -39,7 +28,14 @@ describe("base sockets", function () {
                 expect(testing.netLink).to.be.instanceof(NetLinkSocketBase);
             });
 
-            it("can get and set blocking state", function () {
+            it("can set blocking state", function () {
+                testing.netLink.isBlocking = false;
+                expect(testing.netLink.isBlocking).to.be.false;
+                testing.netLink.isBlocking = true;
+                expect(testing.netLink.isBlocking).to.be.true;
+            });
+
+            it("can get blocking state", function () {
                 expect(testing.netLink.isBlocking).to.be.true;
                 testing.netLink.isBlocking = false;
                 expect(testing.netLink.isBlocking).to.be.false;
@@ -74,7 +70,7 @@ describe("base sockets", function () {
             });
 
             it("can disconnect", function () {
-                testing.netLink.disconnect();
+                expect(() => testing.netLink.disconnect()).not.to.throw;
             });
 
             it("can get isDestroyed", function () {
@@ -113,6 +109,13 @@ describe("base sockets", function () {
                 expect(() => {
                     testing.settableNetLink.isIPv6 = badArg();
                 }).to.throw();
+            });
+
+            it("is the expected IP version", function () {
+                const { ipVersion } = testing.constructorArgs;
+                const expectIPv6 = ipVersion === "IPv6";
+                expect(testing.netLink.isIPv6).to.equal(expectIPv6);
+                expect(testing.netLink.isIPv4).to.equal(!expectIPv6);
             });
         });
     }

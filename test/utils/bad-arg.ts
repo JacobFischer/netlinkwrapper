@@ -9,3 +9,5 @@ const noArg = Symbol("invalid arg");
 export function badArg<T>(arg: unknown = noArg): T {
     return arg as T;
 }
+
+export const badIPAddress = "192.0.2.0"; // invalid via RFC 5737

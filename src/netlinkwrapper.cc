@@ -352,9 +352,9 @@ void NetLinkWrapper::disconnect(const v8::FunctionCallbackInfo<v8::Value> &args)
 
     try
     {
-        // TCP server never directly reads from the socket, attempting to do so
-        // on Linux will throw an exception. Windows ignores it.
-        if (!(obj->socket->protocol() == NL::Protocol::TCP && obj->socket->type() == NL::SocketType::SERVER))
+        // TCP clients need to be drained
+        // on Linux will others will throw an exception. Windows ignores it.
+        if (obj->socket->protocol() == NL::Protocol::TCP && obj->socket->type() == NL::SocketType::CLIENT)
         {
             auto size = obj->socket->nextReadSize();
             if (size > 0)

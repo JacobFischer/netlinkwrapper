@@ -1,75 +1,97 @@
 import { expect } from "chai";
-import { badArg, TesterServerTCP } from "./utils";
+import { badArg, tcpServerTester } from "./utils";
 import { NetLinkSocketClientTCP } from "../lib";
 
-describe("TCP Server functionality", function () {
-    const testing = new TesterServerTCP(this);
+describe("TCP Server", function () {
+    tcpServerTester.testPermutations((testing) => {
+        it("exists", function () {
+            expect(testing.netLink).to.exist;
+        });
 
-    it("exists", function () {
-        expect(testing).to.exist;
-    });
+        it(`is IP Version "${testing.ipVersion}"`, function () {
+            expect(testing.netLink.isIPv4).to.equal(
+                testing.ipVersion !== "IPv6",
+            );
+            expect(testing.netLink.isIPv6).to.equal(
+                testing.ipVersion === "IPv6",
+            );
+        });
 
-    it("can get hostFrom", function () {
-        // "localhost" maps to ""
-        expect(testing.netLink.hostFrom).to.equal("");
-    });
+        it("can get hostFrom", function () {
+            expect(testing.netLink.hostFrom).to.equal(
+                testing.constructorArgs.host ? testing.host : "",
+            );
+        });
 
-    it("cannot set hostFrom", function () {
-        expect(() => {
-            testing.settableNetLink.hostFrom = badArg();
-        }).to.throw();
-    });
+        it("cannot set hostFrom", function () {
+            expect(() => {
+                testing.settableNetLink.hostFrom = badArg();
+            }).to.throw();
+        });
 
-    it("can accept clients", function () {
-        const client = testing.netLink.accept();
+        it("can accept clients", function () {
+            const client = testing.netLink.accept();
 
-        expect(client).to.exist;
-        expect(client).to.be.an.instanceOf(NetLinkSocketClientTCP);
+            expect(client).to.exist;
+            expect(client).to.be.an.instanceOf(NetLinkSocketClientTCP);
 
-        expect(client?.portFrom).to.equal(testing.port);
+            expect(client?.portFrom).to.equal(testing.port);
 
-        client?.disconnect();
-    });
+            client?.disconnect();
+        });
 
-    it("cannot accept clients once disconnected", function () {
-        testing.netLink.disconnect();
+        it("can accept with not blocking", function () {
+            testing.netLink.isBlocking = false;
+            const firstClient = testing.netLink.accept();
 
-        expect(() => testing.netLink.accept()).to.throw();
-    });
+            expect(firstClient).to.be.an.instanceOf(NetLinkSocketClientTCP);
+            expect(firstClient?.portFrom).to.equal(testing.port);
+            firstClient?.disconnect();
 
-    it("can send and receive data to the client", async function () {
-        const client = testing.netLink.accept();
+            const secondClient = testing.netLink.accept();
+            expect(secondClient).to.be.undefined;
+        });
 
-        expect(client).to.exist;
-        if (!client) {
-            throw new Error("client should exist");
-        }
+        it("cannot accept clients once disconnected", function () {
+            testing.netLink.disconnect();
 
-        const sentData = testing.echo.events.sentData.once();
-        client.isBlocking = false;
-        expect(client.receive()).to.be.undefined;
-        client.send(testing.str);
-        const sent = await sentData;
-        expect(sent.str).to.equal(testing.str);
-        const echoed = client.receive();
-        expect(echoed?.toString()).to.equal(testing.str);
+            expect(() => testing.netLink.accept()).to.throw();
+        });
 
-        client.disconnect();
-    });
+        it("can send and receive data to the client", async function () {
+            const client = testing.netLink.accept();
 
-    it("can attempt to accept when no clients connect", function () {
-        // We don't want it to block forever waiting for a client that
-        // will never exist
-        testing.netLink.isBlocking = false;
+            expect(client).to.exist;
+            if (!client) {
+                throw new Error("client should exist");
+            }
 
-        // first echo client that always connects
-        const client = testing.netLink.accept();
-        expect(client).to.exist;
+            const sentData = testing.echo.events.sentData.once();
+            client.isBlocking = false;
+            expect(client.receive()).to.be.undefined;
+            client.send(testing.str);
+            const sent = await sentData;
+            expect(sent.str).to.equal(testing.str);
+            const echoed = client.receive();
+            expect(echoed?.toString()).to.equal(testing.str);
 
-        // we never told anything else to connect, so expect nothing to accept
-        const noClient = testing.netLink.accept();
-        expect(noClient).to.be.undefined;
+            client.disconnect();
+        });
 
-        client?.disconnect();
+        it("can attempt to accept when no clients connect", function () {
+            // We don't want it to block forever waiting for a client that
+            // will never exist
+            testing.netLink.isBlocking = false;
+
+            // first echo client that always connects
+            const client = testing.netLink.accept();
+            expect(client).to.exist;
+
+            // we never told anything else to connect, so expect nothing to accept
+            const noClient = testing.netLink.accept();
+            expect(noClient).to.be.undefined;
+
+            client?.disconnect();
+        });
     });
 });

@@ -7,10 +7,14 @@ import { NetLinkSocketServerTCP } from "../../lib";
  * A simple Echo Server for testing.
  * Basically async/await syntax for clearer testing code.
  */
-export class EchoClientTCP extends EchoSocket<AddressInfo> {
+export class EchoServerTCP extends EchoSocket<AddressInfo> {
     private socket!: SocketTCP;
 
-    public start(data: { host: string; port: number }): Promise<void> {
+    public start(data: {
+        host: string;
+        port: number;
+        ipVersion?: "IPv4" | "IPv6";
+    }): Promise<void> {
         return new Promise((resolve) => {
             this.socket = new SocketTCP();
             this.socket.on("data", (buffer) => {
@@ -31,9 +35,14 @@ export class EchoClientTCP extends EchoSocket<AddressInfo> {
                     });
                 });
             });
-            this.socket.connect(data.port, data.host, () => {
-                resolve();
-            });
+            this.socket.connect(
+                {
+                    host: data.host,
+                    port: data.port,
+                    family: data.ipVersion === "IPv6" ? 6 : 4,
+                },
+                resolve,
+            );
         });
     }
 
@@ -45,18 +54,11 @@ export class EchoClientTCP extends EchoSocket<AddressInfo> {
     }
 }
 
-export class TesterServerTCP extends Tester<
+export const tcpServerTester = new Tester(
     NetLinkSocketServerTCP,
-    EchoClientTCP
-> {
-    public static readonly tests = "TCP Server";
-
-    constructor(suite: Mocha.Suite) {
-        super(
-            suite,
-            new EchoClientTCP(),
-            ({ port }) => new NetLinkSocketServerTCP(port),
-            false,
-        );
-    }
-}
+    EchoServerTCP,
+    {
+        startEchoAfterNetLink: true,
+        newPermute: ["host"],
+    },
+);
