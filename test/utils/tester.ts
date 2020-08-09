@@ -1,3 +1,4 @@
+/* eslint-disable mocha/no-exports */
 import { EchoSocket } from "./echo-socket";
 import { SocketBase } from "../../lib";
 import { permutations } from "./permutations";
