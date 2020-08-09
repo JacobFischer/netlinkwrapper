@@ -60,16 +60,16 @@ const { SocketUDP } = require('netlinkwrapper');
 const portA = 54321;
 const portB = 12345;
 
-const socketA = new SocketUDP(portA, "localhost");
-const socketB = new SocketUDP(portB, "localhost");
+const socketA = new SocketUDP(portA, 'localhost');
+const socketB = new SocketUDP(portB, 'localhost');
 
-socketA.sendTo("localhost", portB, "Hello from socketA");
+socketA.sendTo('localhost', portB, 'Hello from socketA');
 const got = socketB.receiveFrom();
 
 const identical = got.port === portA;
-console.log("identical?", identical); // should be: true
+console.log('identical?', identical); // should be: true
 
-// should be: "got: 'Hello from socketA' from localhost:54321"
+// should be: 'got: 'Hello from socketA' from localhost:54321'
 console.log(`got: '${got.data.toString()}' from ${got.host}:${got.port}`);
 
 socketA.disconnect();
