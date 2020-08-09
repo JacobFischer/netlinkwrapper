@@ -31,11 +31,11 @@ your environment.
 ### TCP
 
 ```js
-const { NetLinkSocketClientTCP, NetLinkSocketServerTCP } = require('netlinkwrapper');
+const { SocketClientTCP, SocketServerTCP } = require('netlinkwrapper');
 
 const port = 33333;
-const server = new NetLinkSocketServerTCP(port);
-const client = new NetLinkSocketClientTCP('localhost', port);
+const server = new SocketServerTCP(port);
+const client = new SocketClientTCP('localhost', port);
 
 const serverSends = 'hello world!';
 const serversClient = server.accept();
@@ -55,13 +55,13 @@ server.disconnect();
 ### UDP
 
 ```js
-const { NetLinkSocketUDP } = require('netlinkwrapper');
+const { SocketUDP } = require('netlinkwrapper');
 
 const portA = 54321;
 const portB = 12345;
 
-const socketA = new NetLinkSocketUDP(portA, "");
-const socketB = new NetLinkSocketUDP(portB, "");
+const socketA = new SocketUDP(portA, "");
+const socketB = new SocketUDP(portB, "");
 
 socketA.sendTo("localhost", portB, "Hello from socketA");
 const got = socketB.receiveFrom();

@@ -3,7 +3,7 @@ import { fork } from "child_process";
 import { join, resolve } from "path";
 import { TextEncoder } from "util";
 import { badArg, tcpClientTester, udpTester, EchoUDP } from "./utils";
-import { NetLinkSocketUDP } from "../lib";
+import { SocketUDP } from "../lib";
 
 describe("client shared functionality", function () {
     for (const tester of [tcpClientTester, udpTester]) {
@@ -17,7 +17,7 @@ describe("client shared functionality", function () {
                 data: string | Buffer | Uint8Array = testing.str,
                 client = testing.netLink,
             ) => {
-                if (client instanceof NetLinkSocketUDP) {
+                if (client instanceof SocketUDP) {
                     client.sendTo(testing.host, echoPort(), data);
                 } else {
                     client.send(data);
@@ -25,7 +25,7 @@ describe("client shared functionality", function () {
             };
 
             const receive = () => {
-                if (testing.netLink instanceof NetLinkSocketUDP) {
+                if (testing.netLink instanceof SocketUDP) {
                     const got = testing.netLink.receiveFrom();
                     return got?.data;
                 } else {
@@ -54,7 +54,8 @@ describe("client shared functionality", function () {
                 const buffer = Buffer.from(testing.str);
                 send(buffer);
                 const sent = await dataPromise;
-                expect(sent.buffer.compare(buffer)).to.equal(0); // should be echoed back
+                // should be echoed back
+                expect(sent.buffer.compare(buffer)).to.equal(0);
 
                 const read = receive();
                 expect(read?.compare(buffer)).to.equal(0);
@@ -103,10 +104,11 @@ describe("client shared functionality", function () {
                 this.timeout(10_000);
 
                 const testString = "Hello worker thread!";
-                const newConnectionPromise = testing.echo.events.newConnection.once();
+                const newConnection = testing.echo.events.newConnection.once();
                 const sentDataPromise = testing.echo.events.sentData.once();
-                const disconnectedPromise = testing.echo.events.closedConnection.once();
-                // unlike other tests, the netLink tests are all in the worker code
+                const closed = testing.echo.events.closedConnection.once();
+                // unlike other tests, for this test, the netLink tests are all
+                // in the worker code
                 const workerPath = resolve(
                     join(__dirname, "./client.worker.ts"),
                 );
@@ -116,20 +118,20 @@ describe("client shared functionality", function () {
                         testPort: String(echoPort()),
                         testString,
                         testType:
-                            testing.netLink instanceof NetLinkSocketUDP
+                            testing.netLink instanceof SocketUDP
                                 ? "UDP"
                                 : "TCP",
                     },
                     execArgv: ["-r", "ts-node/register"],
                 });
 
-                await newConnectionPromise;
+                await newConnection;
                 const sent = await sentDataPromise;
 
                 expect(sent.str).to.exist;
                 expect(sent.str).to.equal(testString);
 
-                await disconnectedPromise;
+                await closed;
 
                 const code = await new Promise((resolve, reject) =>
                     worker.on("exit", (code) => {

@@ -84,7 +84,7 @@ void NetLinkWrapper::init(v8::Local<v8::Object> exports)
     auto isolate = v8::Isolate::GetCurrent();
 
     /* -- Base -- */
-    auto name_base = v8_str("NetLinkSocketBase");
+    auto name_base = v8_str("SocketBase");
     auto base_template = v8::FunctionTemplate::New(isolate, new_base);
     base_template->SetClassName(name_base);
     auto base_instance_template = base_template->InstanceTemplate();
@@ -118,7 +118,7 @@ void NetLinkWrapper::init(v8::Local<v8::Object> exports)
     NODE_SET_PROTOTYPE_METHOD(base_template, "disconnect", disconnect);
 
     /* -- TCP Client -- */
-    auto name_tcp_client = v8_str("NetLinkSocketClientTCP");
+    auto name_tcp_client = v8_str("SocketClientTCP");
     auto tcp_client_template = v8::FunctionTemplate::New(isolate, new_tcp_client);
     tcp_client_template->SetClassName(name_tcp_client);
     tcp_client_template->Inherit(base_template);
@@ -138,7 +138,7 @@ void NetLinkWrapper::init(v8::Local<v8::Object> exports)
     NODE_SET_PROTOTYPE_METHOD(tcp_client_template, "send", send);
 
     /* -- TCP Server -- */
-    auto name_tcp_server = v8_str("NetLinkSocketServerTCP");
+    auto name_tcp_server = v8_str("SocketServerTCP");
     auto tcp_server_template = v8::FunctionTemplate::New(isolate, new_tcp_server);
     tcp_server_template->SetClassName(name_tcp_server);
     tcp_server_template->Inherit(base_template);
@@ -153,7 +153,7 @@ void NetLinkWrapper::init(v8::Local<v8::Object> exports)
     NODE_SET_PROTOTYPE_METHOD(tcp_server_template, "accept", accept);
 
     /* -- UDP -- */
-    auto name_udp = v8_str("NetLinkSocketUDP");
+    auto name_udp = v8_str("SocketUDP");
     auto udp_template = v8::FunctionTemplate::New(isolate, new_udp);
     udp_template->SetClassName(name_udp);
     udp_template->Inherit(base_template);
@@ -186,7 +186,7 @@ void NetLinkWrapper::init(v8::Local<v8::Object> exports)
 void NetLinkWrapper::new_base(const v8::FunctionCallbackInfo<v8::Value> &args)
 {
     auto isolate = v8::Isolate::GetCurrent();
-    isolate->ThrowException(v8::Exception::Error(v8_str("NetLinkSocketBase should not be directly constructed")));
+    isolate->ThrowException(v8::Exception::Error(v8_str("SocketBase should not be directly constructed")));
 }
 
 void NetLinkWrapper::new_tcp_client(const v8::FunctionCallbackInfo<v8::Value> &args)
@@ -194,7 +194,7 @@ void NetLinkWrapper::new_tcp_client(const v8::FunctionCallbackInfo<v8::Value> &a
     if (!args.IsConstructCall())
     {
         auto isolate = v8::Isolate::GetCurrent();
-        isolate->ThrowException(v8::Exception::Error(v8_str("NetLinkSocketClientTCP constructor must be invoked via 'new'.")));
+        isolate->ThrowException(v8::Exception::Error(v8_str("SocketClientTCP constructor must be invoked via 'new'.")));
         return;
     }
     // else Invoked as constructor: `new NetLinkWrapper(...)`
@@ -233,7 +233,7 @@ void NetLinkWrapper::new_udp(const v8::FunctionCallbackInfo<v8::Value> &args)
     if (!args.IsConstructCall())
     {
         auto isolate = v8::Isolate::GetCurrent();
-        isolate->ThrowException(v8::Exception::Error(v8_str("NetLinkSocketUDP constructor must be invoked via 'new'.")));
+        isolate->ThrowException(v8::Exception::Error(v8_str("SocketUDP constructor must be invoked via 'new'.")));
         return;
     }
     // else Invoked as constructor: `new NetLinkWrapper(...)`
@@ -273,7 +273,7 @@ void NetLinkWrapper::new_tcp_server(const v8::FunctionCallbackInfo<v8::Value> &a
     if (!args.IsConstructCall())
     {
         auto isolate = v8::Isolate::GetCurrent();
-        isolate->ThrowException(v8::Exception::Error(v8_str("NetLinkSocketServerTCP constructor must be invoked via 'new'.")));
+        isolate->ThrowException(v8::Exception::Error(v8_str("SocketServerTCP constructor must be invoked via 'new'.")));
         return;
     }
 

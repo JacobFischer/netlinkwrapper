@@ -7,8 +7,9 @@ and this project adheres to [Semantic Versioning].
 ## [2.0.0] - 2020-??-?
 ### Changes
 - **Breaking**: The entire shape of this package has been modified and expanded
-  - The `NetLinkWrapper` constructor is removed, and no longer the only export
-  - `NetLinkSocketClientTCP` functionally replaces `NetLinkWrapper`. It is a
+  - The `NetLinkWrapper` constructor is removed, and is no longer the only
+    export
+  - `SocketClientTCP` functionally replaces `NetLinkWrapper`. It is a
   named export of the same name of this module now
   - `.connect` no longer exists. Instead connections are attempted to form
   during the constructor call
@@ -18,34 +19,35 @@ and this project adheres to [Semantic Versioning].
   will change the blocking nature of the socket
   - `.write()` renamed to `.send()`
     - Will now accept a `Buffer`, `string`, or `Uint8Array` typed value to send,
-      instead of only a string [#15].
-  - `.read()` renamed to `.receive()`.
-    - No longer requires (or accepts) buffer size argument
-    - Now returns a `Buffer` instance instead of a string
-- **Important**: The entire middleware pertain of this module has been
-  re-written. It is recommended  that you review the docs to see what has
-  changed and been added
+      instead of only a `string` [#15]
+  - `.read()` renamed to `.receive()`
+    - No longer requires (or accepts) a buffer size argument
+    - Now returns a `Buffer` instance instead of a `string`
+- **Important**: The entire middleware component of this module has been
+  re-written
+  - It is recommended that you review the docs to see what has changed and been
+    added
 
 ### Added
-- **New**: `NetLinkSocketUDP` added for UDP usage
-  - Can send and/or receive from other UDP sockets.
-- **New**: `NetLinkSocketServerTCP` added for TCP server usage
+- **New**: `SocketUDP` added for UDP usage
+  - Can send and/or receive from other UDP sockets
+- **New**: `SocketServerTCP` added for TCP server usage
   - Can bind and listen to an address for new TCP clients
 - All socket classes can be manually specified to `IPv4` or `IPv6`. Defaults
-  to `IPv4`.
+  to `IPv4`
   - After constructed this can be checked via the `isIPv4` and `isIPv6` flags.
     - Note: These cannot be set/changed these after construction. Attempting to
-      do so will result in an Error being thrown.
+      do so will result in an Error being thrown
 - Sockets expose their `hostFrom`, `portFrom` (TCP Server/UDP), and `hostTo`
-  , `portTo` (TCP Client) as properties.
+  , `portTo` (TCP Client) as properties
   - Note: These cannot be changed/set after constructed. Attempting to do so
-    will result in an Error being thrown.
+    will result in an Error being thrown
 - See the [documentation] for full details on these new classes and
 functionality
 - Once `.disconnect()` is called, the new `isDestroyed` flag will be set from
-  `false` to `true`.
+  `false` to `true`
   - Note: This cannot be manually set. Attempting to do so will result in an
-    Error being thrown.
+    Error being thrown
 
 ### Fixes
 - node-gyp C++ build warnings on Windows systems fixed resolved

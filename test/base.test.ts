@@ -1,4 +1,4 @@
-import { NetLinkSocketBase } from "../lib";
+import { SocketBase } from "../lib";
 import {
     badArg,
     EchoSocket,
@@ -18,14 +18,14 @@ describe("base functionality", function () {
             it("sets up testing data", function () {
                 expect(testing).to.exist;
                 expect(testing.echo).to.be.instanceOf(EchoSocket);
-                expect(testing.netLink).to.be.instanceOf(NetLinkSocketBase);
+                expect(testing.netLink).to.be.instanceOf(SocketBase);
                 expect(typeof testing.host).to.equal("string");
                 expect(typeof testing.port).to.equal("number");
                 expect(typeof testing.str).to.equal("string");
             });
 
-            it("extends NetLinkSocketBase", function () {
-                expect(testing.netLink).to.be.instanceof(NetLinkSocketBase);
+            it("extends SocketBase", function () {
+                expect(testing.netLink).to.be.instanceof(SocketBase);
             });
 
             it("can set blocking state", function () {

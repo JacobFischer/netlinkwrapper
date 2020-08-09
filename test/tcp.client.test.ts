@@ -1,6 +1,6 @@
 import { expect } from "chai";
 import { Socket } from "net";
-import { NetLinkSocketClientTCP } from "../lib";
+import { SocketClientTCP } from "../lib";
 import {
     badArg,
     badIPAddress,
@@ -10,37 +10,40 @@ import {
 } from "./utils";
 
 describe("TCP Client", function () {
-    it("throws when it cannot connect to a server", function () {
-        this.timeout(2 * 60 * 1_000);
+    tcpClientTester.permutations("standalone", ({ ipVersion }) => {
+        it("can register as a TCP listener", async function () {
+            const echoServer = new EchoClientTCP();
+            const port = getNextTestingPort();
+            await echoServer.start({ port });
 
-        expect(
-            () => new NetLinkSocketClientTCP(1234, badIPAddress),
-        ).to.throw();
-    });
+            const connected = echoServer.events.newConnection.once();
+            const preConnectionCount = await echoServer.countConnections();
+            expect(preConnectionCount).to.equal(0);
 
-    it("can register as a TCP listener", async function () {
-        const echoServer = new EchoClientTCP();
-        const port = getNextTestingPort();
-        await echoServer.start({ port });
+            const tcp = new SocketClientTCP(port, "localhost", ipVersion);
+            const listener = await connected;
+            expect(listener).to.be.instanceOf(Socket);
 
-        const connectionPromise = echoServer.events.newConnection.once();
-        const preConnectionCount = await echoServer.countConnections();
-        expect(preConnectionCount).to.equal(0);
+            const postConnectionCount = await echoServer.countConnections();
+            expect(postConnectionCount).to.equal(1);
 
-        const tcp = new NetLinkSocketClientTCP(port, "localhost");
-        const listener = await connectionPromise;
-        expect(listener).to.be.instanceOf(Socket);
+            const disconnected = echoServer.events.closedConnection.once();
+            tcp.disconnect();
+            const data = await disconnected;
+            expect(data.from).to.equal(listener);
+            expect(data.hadError).to.be.false;
 
-        const postConnectionCount = await echoServer.countConnections();
-        expect(postConnectionCount).to.equal(1);
+            await echoServer.stop();
+        });
 
-        const disconnectPromise = echoServer.events.closedConnection.once();
-        tcp.disconnect();
-        const disconnected = await disconnectPromise;
-        expect(disconnected.from).to.equal(listener);
-        expect(disconnected.hadError).to.be.false;
+        it("throws when it cannot connect to a server", function () {
+            // extremely long timeout so all operating systems can run this
+            this.timeout(2 * 60 * 1_000); // 2 min
 
-        await echoServer.stop();
+            expect(
+                () => new SocketClientTCP(1234, badIPAddress, ipVersion),
+            ).to.throw();
+        });
     });
 
     tcpClientTester.testPermutations((testing) => {

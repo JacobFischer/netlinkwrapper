@@ -1,6 +1,6 @@
 import { createSocket, RemoteInfo } from "dgram";
 import { EchoSocket } from "./echo-socket";
-import { NetLinkSocketUDP } from "../../lib";
+import { SocketUDP } from "../../lib";
 import { Tester, getNextTestingPort } from "./tester";
 
 // upd6 will accept IPv4/6 connections so it is ideal for testing with
@@ -64,6 +64,6 @@ export class EchoUDP extends EchoSocket<RemoteInfo> {
     }
 }
 
-export const udpTester = new Tester(NetLinkSocketUDP, EchoUDP, {
+export const udpTester = new Tester(SocketUDP, EchoUDP, {
     newPermute: ["host", "port"],
 });

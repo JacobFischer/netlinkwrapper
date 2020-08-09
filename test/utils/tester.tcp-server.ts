@@ -1,7 +1,7 @@
 import { AddressInfo, Socket as SocketTCP } from "net";
 import { EchoSocket } from "./echo-socket";
 import { Tester } from "./tester";
-import { NetLinkSocketServerTCP } from "../../lib";
+import { SocketServerTCP } from "../../lib";
 
 /**
  * A simple Echo Server for testing.
@@ -54,11 +54,7 @@ export class EchoServerTCP extends EchoSocket<AddressInfo> {
     }
 }
 
-export const tcpServerTester = new Tester(
-    NetLinkSocketServerTCP,
-    EchoServerTCP,
-    {
-        startEchoAfterNetLink: true,
-        newPermute: ["host"],
-    },
-);
+export const tcpServerTester = new Tester(SocketServerTCP, EchoServerTCP, {
+    startEchoAfterNetLink: true,
+    newPermute: ["host"],
+});

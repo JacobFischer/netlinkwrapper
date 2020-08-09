@@ -1,6 +1,6 @@
 import { expect } from "chai";
 import { badArg, tcpServerTester } from "./utils";
-import { NetLinkSocketClientTCP } from "../lib";
+import { SocketClientTCP } from "../lib";
 
 describe("TCP Server", function () {
     tcpServerTester.testPermutations((testing) => {
@@ -33,7 +33,7 @@ describe("TCP Server", function () {
             const client = testing.netLink.accept();
 
             expect(client).to.exist;
-            expect(client).to.be.an.instanceOf(NetLinkSocketClientTCP);
+            expect(client).to.be.an.instanceOf(SocketClientTCP);
 
             expect(client?.portFrom).to.equal(testing.port);
 
@@ -44,7 +44,7 @@ describe("TCP Server", function () {
             testing.netLink.isBlocking = false;
             const firstClient = testing.netLink.accept();
 
-            expect(firstClient).to.be.an.instanceOf(NetLinkSocketClientTCP);
+            expect(firstClient).to.be.an.instanceOf(SocketClientTCP);
             expect(firstClient?.portFrom).to.equal(testing.port);
             firstClient?.disconnect();
 
@@ -87,7 +87,7 @@ describe("TCP Server", function () {
             const client = testing.netLink.accept();
             expect(client).to.exist;
 
-            // we never told anything else to connect, so expect nothing to accept
+            // we never made anything else connect, so expect nothing to accept
             const noClient = testing.netLink.accept();
             expect(noClient).to.be.undefined;
 

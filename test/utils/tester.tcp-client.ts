@@ -1,6 +1,6 @@
 import { Server, Socket as SocketTCP } from "net";
 import { EchoSocket } from "./echo-socket";
-import { NetLinkSocketClientTCP } from "../../lib";
+import { SocketClientTCP } from "../../lib";
 import { Tester } from "./tester";
 
 /**
@@ -57,7 +57,4 @@ export class EchoClientTCP extends EchoSocket<SocketTCP> {
     }
 }
 
-export const tcpClientTester = new Tester(
-    NetLinkSocketClientTCP,
-    EchoClientTCP,
-);
+export const tcpClientTester = new Tester(SocketClientTCP, EchoClientTCP);

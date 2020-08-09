@@ -7,7 +7,7 @@
  * the different socket classes. **Note:**: Attempting to use `new` against this
  * class will result in an exception being thrown.
  */
-export declare abstract class NetLinkSocketBase {
+export declare abstract class SocketBase {
     /**
      * Disconnects this so. Once this is called the socket is considered
      * "destroyed" and no no longer be used for any form of communication.
@@ -54,7 +54,7 @@ export declare abstract class NetLinkSocketBase {
 /**
  * Represents a TCP Client connection.
  */
-export declare class NetLinkSocketClientTCP extends NetLinkSocketBase {
+export declare class SocketClientTCP extends SocketBase {
     /**
      * Creates, and then attempts to connect to a remote server given an
      * address. If no connection can be made, an Error is thrown.
@@ -98,7 +98,7 @@ export declare class NetLinkSocketClientTCP extends NetLinkSocketBase {
 /**
  * Represents a TCP Server connection.
  */
-export declare class NetLinkSocketServerTCP extends NetLinkSocketBase {
+export declare class SocketServerTCP extends SocketBase {
     /**
      * Creates a TCP Server listening on a given port (an optional host) for
      * new TCP Client connections.
@@ -117,16 +117,16 @@ export declare class NetLinkSocketServerTCP extends NetLinkSocketBase {
 
     /**
      * Listens for a new client connection, and accepts them, returning a new
-     * `NetLinkSocketClientTCP` instance as an interface to send and receive
+     * `SocketClientTCP` instance as an interface to send and receive
      * data from their connection.
      *
      * @returns When a new connection can be accepted, a new
-     * `NetLinkSocketClientTCP` instance. If set to blocking this call will
+     * `SocketClientTCP` instance. If set to blocking this call will
      * synchronously block until a connect is made to accept and return.
      * Otherwise when not blocking and there is no connection to accept,
      * `undefined` is returned.
      */
-    accept(): NetLinkSocketClientTCP | undefined;
+    accept(): SocketClientTCP | undefined;
 
     /**
      * Gets the socket local address. Empty string means any bound host.
@@ -137,7 +137,7 @@ export declare class NetLinkSocketServerTCP extends NetLinkSocketBase {
 /**
  * Represents a UDP Datagram.
  */
-export declare class NetLinkSocketUDP extends NetLinkSocketBase {
+export declare class SocketUDP extends SocketBase {
     /**
      * Creates a UDP socket datagram with an address to use as the default
      * socket to send/receive from. Because UDP is connection-less unlike TCP,

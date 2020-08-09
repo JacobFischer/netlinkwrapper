@@ -1,5 +1,5 @@
 import { EchoSocket } from "./echo-socket";
-import { NetLinkSocketBase } from "../../lib";
+import { SocketBase } from "../../lib";
 import { permutations } from "./permutations";
 import { badArg } from "./bad-arg";
 
@@ -48,7 +48,7 @@ function getTestingString(context: Mocha.Context): string {
 }
 
 export type BaseTesting<
-    TNetLink extends NetLinkSocketBase,
+    TNetLink extends SocketBase,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     TEchoSocket extends EchoSocket<any>
 > = Readonly<{
@@ -68,12 +68,12 @@ export type BaseTesting<
 
 export class Tester<
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    TNetLinkClass extends { new (...args: any[]): NetLinkSocketBase },
+    TNetLinkClass extends { new (...args: any[]): SocketBase },
     TEchoSocketClass extends {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         new (...args: any[]): TEchoSocket;
     },
-    TNetLink extends NetLinkSocketBase = InstanceType<TNetLinkClass>,
+    TNetLink extends SocketBase = InstanceType<TNetLinkClass>,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     TEchoSocket extends EchoSocket<any> = InstanceType<TEchoSocketClass>,
     TTesting extends BaseTesting<TNetLink, TEchoSocket> = BaseTesting<
@@ -109,68 +109,87 @@ export class Tester<
         );
     }
 
-    public testPermutations(callback: (testing: TTesting) => void): void {
-        // eslint-disable-next-line @typescript-eslint/no-this-alias
-        const self = this;
-        describe(`${self.NetLinkClass.name} permutations`, function () {
-            for (const [usePort, useHost, ipVersion] of self.constructorArgs) {
-                const testing = {
-                    host: "localhost",
-                    port: 1,
-                    ipVersion: ipVersion || "IPv4",
-                    constructorArgs: {
-                        host: useHost ? "localhost" : undefined,
-                        port: usePort ? 1 : undefined,
-                        ipVersion,
-                    },
-                    str: "",
-                    netLink: (null as unknown) as TNetLink,
-                    echo: new self.EchoSocketClass(),
-                    settableNetLink: (null as unknown) as Writeable<TNetLink>,
-                } as Writeable<TTesting>;
-
+    public permutations(
+        preDescription: string,
+        callback: (
+            args: {
+                usePort: boolean;
+                useHost: boolean;
+                ipVersion: "IPv4" | "IPv6" | undefined;
+            },
+            suite: Mocha.Suite,
+        ) => void,
+    ): void {
+        const { constructorArgs } = this;
+        const desc = [preDescription, this.NetLinkClass.name, "permutations"]
+            .filter(Boolean)
+            .join(" ");
+        describe(desc, function () {
+            for (const [usePort, useHost, ipVersion] of constructorArgs) {
                 const withString = `port: ${
                     usePort ? "number" : "undefined"
                 }, host: ${useHost ? "string" : "undefined"}, ip: ${String(
                     ipVersion,
                 )}`;
                 describe(`with ${withString}`, function () {
-                    this.beforeEach(async function () {
-                        testing.str = getTestingString(this);
-                        testing.port = getNextTestingPort();
-                        if (testing.constructorArgs.port) {
-                            testing.constructorArgs.port = testing.port;
-                        }
-
-                        if (!self.startEchoAfterNetLink) {
-                            await testing.echo.start(testing);
-                        }
-                        testing.netLink = new self.NetLinkClass(
-                            testing.constructorArgs.port,
-                            testing.constructorArgs.host,
-                            testing.constructorArgs.ipVersion,
-                        ) as TNetLink;
-
-                        testing.settableNetLink = testing.netLink;
-                        if (self.startEchoAfterNetLink) {
-                            await testing.echo.start(testing);
-                        }
-
-                        if (self.alsoBeforeEach) {
-                            await self.alsoBeforeEach(testing);
-                        }
-                    });
-
-                    this.afterEach(async () => {
-                        if (testing.netLink && !testing.netLink.isDestroyed) {
-                            testing.netLink.disconnect();
-                        }
-                        await testing.echo.stop();
-                    });
-
-                    callback(testing);
+                    callback({ usePort, useHost, ipVersion }, this);
                 });
             }
+        });
+    }
+
+    public testPermutations(callback: (testing: TTesting) => void): void {
+        const { alsoBeforeEach, NetLinkClass, startEchoAfterNetLink } = this;
+        this.permutations("", ({ usePort, useHost, ipVersion }, suite) => {
+            const testing = {
+                host: "localhost",
+                port: 1,
+                ipVersion: ipVersion || "IPv4",
+                constructorArgs: {
+                    host: useHost ? "localhost" : undefined,
+                    port: usePort ? 1 : undefined,
+                    ipVersion,
+                },
+                str: "",
+                netLink: (null as unknown) as TNetLink,
+                echo: new this.EchoSocketClass(),
+                settableNetLink: (null as unknown) as Writeable<TNetLink>,
+            } as Writeable<TTesting>;
+
+            suite.beforeEach(async function () {
+                testing.str = getTestingString(this);
+                testing.port = getNextTestingPort();
+                if (testing.constructorArgs.port) {
+                    testing.constructorArgs.port = testing.port;
+                }
+
+                if (!startEchoAfterNetLink) {
+                    await testing.echo.start(testing);
+                }
+                testing.netLink = new NetLinkClass(
+                    testing.constructorArgs.port,
+                    testing.constructorArgs.host,
+                    testing.constructorArgs.ipVersion,
+                ) as TNetLink;
+
+                testing.settableNetLink = testing.netLink;
+                if (startEchoAfterNetLink) {
+                    await testing.echo.start(testing);
+                }
+
+                if (alsoBeforeEach) {
+                    await alsoBeforeEach(testing);
+                }
+            });
+
+            suite.afterEach(async () => {
+                if (testing.netLink && !testing.netLink.isDestroyed) {
+                    testing.netLink.disconnect();
+                }
+                await testing.echo.stop();
+            });
+
+            callback(testing);
         });
     }
 }
