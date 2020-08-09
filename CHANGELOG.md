@@ -52,7 +52,7 @@ functionality
 ### Fixes
 - node-gyp C++ build warnings on Windows systems resolved
 
-## [1.2.1] - 2020-11-07
+## [1.2.1] - 2020-01-07
 ### Security
 - Updated dependencies to latest to resolve security concerns
 
@@ -99,6 +99,7 @@ functionality
 [#4]: https://github.com/JacobFischer/netlinkwrapper/pull/4
 [#2]: https://github.com/JacobFischer/netlinkwrapper/pull/2
 
+[2.0.0]: https://github.com/JacobFischer/netlinkwrapper/releases/tag/v2.0.0
 [1.2.1]: https://github.com/JacobFischer/netlinkwrapper/releases/tag/v1.2.1
 [1.2.0]: https://github.com/JacobFischer/netlinkwrapper/releases/tag/v1.2.0
 [1.1.2]: https://github.com/JacobFischer/netlinkwrapper/releases/tag/v1.1.2

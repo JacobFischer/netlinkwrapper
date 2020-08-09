@@ -35,7 +35,7 @@ const { SocketClientTCP, SocketServerTCP } = require('netlinkwrapper');
 
 const port = 33333;
 const server = new SocketServerTCP(port);
-const client = new SocketClientTCP('localhost', port);
+const client = new SocketClientTCP(port, 'localhost');
 
 const serverSends = 'hello world!';
 const serversClient = server.accept();
