@@ -60,8 +60,8 @@ const { SocketUDP } = require('netlinkwrapper');
 const portA = 54321;
 const portB = 12345;
 
-const socketA = new SocketUDP(portA, "");
-const socketB = new SocketUDP(portB, "");
+const socketA = new SocketUDP(portA, "localhost");
+const socketB = new SocketUDP(portB, "localhost");
 
 socketA.sendTo("localhost", portB, "Hello from socketA");
 const got = socketB.receiveFrom();
