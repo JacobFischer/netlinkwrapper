@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning].
 
 ## [2.0.1] - 2020-08-09
 ### Fixed
-- Fixed missing binding.gyp file in package deployed to NPM.
+- Fixed missing binding.gyp file in package deployed to NPM
 
 ## [2.0.0] - 2020-08-09
 ### Changes
