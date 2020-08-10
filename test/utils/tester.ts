@@ -4,8 +4,6 @@ import { SocketBase } from "../../lib";
 import { permutations } from "./permutations";
 import { badArg } from "./bad-arg";
 
-mocha.timeout(30_000);
-
 type Writeable<T> = { -readonly [P in keyof T]: T[P] };
 
 let nextPort = 50_000;

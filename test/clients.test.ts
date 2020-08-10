@@ -100,9 +100,7 @@ describe("client shared functionality", function () {
             });
 
             it("can do truly blocking read", async function () {
-                // Slow because child process needs to run TS code on the fly
-                this.timeout(10_000);
-
+                // Note: Slow because child process needs to transpile TS code
                 const testString = "Hello worker thread!";
                 const newConnection = testing.echo.events.newConnection.once();
                 const sentDataPromise = testing.echo.events.sentData.once();
