@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog]
 and this project adheres to [Semantic Versioning].
 
+## [2.0.1] - 2020-08-09
+### Fixed
+- Fixed missing binding.gyp file in package deployed to NPM.
+
 ## [2.0.0] - 2020-08-09
 ### Changes
 - **Breaking**: The entire shape of this package has been modified and expanded
@@ -49,7 +53,7 @@ functionality
   - Note: This cannot be manually set, and attempting to do so will result in an
     Error being thrown
 
-### Fixes
+### Fixed
 - node-gyp C++ build warnings on Windows systems resolved
 
 ## [1.2.1] - 2020-01-07
@@ -99,6 +103,7 @@ functionality
 [#4]: https://github.com/JacobFischer/netlinkwrapper/pull/4
 [#2]: https://github.com/JacobFischer/netlinkwrapper/pull/2
 
+[2.0.1]: https://github.com/JacobFischer/netlinkwrapper/releases/tag/v2.0.1
 [2.0.0]: https://github.com/JacobFischer/netlinkwrapper/releases/tag/v2.0.0
 [1.2.1]: https://github.com/JacobFischer/netlinkwrapper/releases/tag/v1.2.1
 [1.2.0]: https://github.com/JacobFischer/netlinkwrapper/releases/tag/v1.2.0

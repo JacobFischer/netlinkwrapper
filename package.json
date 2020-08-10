@@ -1,9 +1,9 @@
 {
   "name": "netlinkwrapper",
-  "version": "2.0.0",
-  "description": "This is a simple node-gyp module wrapper for the C++ library netLink v1.0.0_pre6",
+  "version": "2.0.1",
+  "description": "Synchronous TCP/UDP sockets via NetLink Sockets",
   "author": "JacobFischer <jacob.t.fischer@gmail.com>",
-  "license": "MIT",
+  "license": "GNU GPL V2.0",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "gypfile": true,
@@ -70,6 +70,7 @@
     "ncu": "ncu -u"
   },
   "files": [
+    "binding.gyp",
     "lib/",
     "src/"
   ]
