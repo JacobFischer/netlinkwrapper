@@ -43,7 +43,7 @@ serversClient.send(serverSends);
 
 const clientReceived = client.receive();
 
-const identical = serverSends ==== clientReceived.toString(); // should be true
+const identical = serverSends === clientReceived.toString(); // should be true
 
 console.log('the two strings are identical?', identical);
 
