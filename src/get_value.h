@@ -18,9 +18,9 @@ namespace GetValue
     std::string get_typeof_str(const v8::Local<v8::Value> &arg)
     {
         auto isolate = v8::Isolate::GetCurrent();
-        auto typeof = arg->TypeOf(isolate);
+        auto type_of = arg->TypeOf(isolate);
 
-        Nan::Utf8String utf8_str(arg);
+        Nan::Utf8String utf8_str(type_of);
         std::stringstream ss;
         ss << "Got type \"" << *utf8_str << "\".";
         return ss.str();
