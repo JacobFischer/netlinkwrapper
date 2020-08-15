@@ -3,6 +3,7 @@ import { Socket } from "net";
 import { SocketClientTCP } from "../lib";
 import {
     badArg,
+    BadConstructor,
     badIPAddress,
     EchoClientTCP,
     getNextTestingPort,
@@ -10,6 +11,18 @@ import {
 } from "./utils";
 
 describe("TCP Client", function () {
+    it("should throw without a port passed", function () {
+        expect(() => {
+            new (SocketClientTCP as BadConstructor)();
+        }).to.throw(TypeError);
+    });
+
+    it("should throw without a host passed", function () {
+        expect(() => {
+            new (SocketClientTCP as BadConstructor)(12345);
+        }).to.throw(TypeError);
+    });
+
     tcpClientTester.permutations("standalone", ({ ipVersion }) => {
         it("can register as a TCP listener", async function () {
             const echoServer = new EchoClientTCP();

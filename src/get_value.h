@@ -2,7 +2,6 @@
 #define GET_VALUE_H
 
 #include <cstdint>
-#include <iostream>
 #include <nan.h>
 #include <node.h>
 #include <sstream>

@@ -10,4 +10,9 @@ export function badArg<T>(arg: unknown = noArg): T {
     return arg as T;
 }
 
+export type BadConstructor = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    new (...args: any[]): unknown;
+};
+
 export const badIPAddress = "192.0.2.0"; // invalid via RFC 5737

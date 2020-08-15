@@ -1,8 +1,14 @@
 import { expect } from "chai";
-import { badArg, tcpServerTester } from "./utils";
-import { SocketClientTCP } from "../lib";
+import { badArg, BadConstructor, tcpServerTester } from "./utils";
+import { SocketClientTCP, SocketServerTCP } from "../lib";
 
 describe("TCP Server", function () {
+    it("should throw without a port passed", function () {
+        expect(() => {
+            new (SocketServerTCP as BadConstructor)();
+        }).to.throw(TypeError);
+    });
+
     tcpServerTester.testPermutations((testing) => {
         it("exists", function () {
             expect(testing.netLink).to.exist;

@@ -1,6 +1,7 @@
 import { SocketBase } from "../lib";
 import {
     badArg,
+    BadConstructor,
     EchoSocket,
     tcpClientTester,
     tcpServerTester,
@@ -116,6 +117,14 @@ describe("base functionality", function () {
                 const expectIPv6 = ipVersion === "IPv6";
                 expect(testing.netLink.isIPv6).to.equal(expectIPv6);
                 expect(testing.netLink.isIPv4).to.equal(!expectIPv6);
+            });
+        });
+
+        tester.testInvalidPermutations((...args) => {
+            it("should throw when constructed with invalid args", function () {
+                expect(() => {
+                    new (tester.NetLinkClass as BadConstructor)(...args);
+                }).to.throw(TypeError);
             });
         });
     }
