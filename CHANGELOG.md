@@ -4,9 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog]
 and this project adheres to [Semantic Versioning].
 
+## [2.0.2] - 2020-08-15
+### Fixed
+- Fix invalid arguments to constructors not throwing when omitted [#16]
+
 ## [2.0.1] - 2020-08-09
 ### Fixed
-- Fixed missing binding.gyp file in package deployed to NPM
+- Fix missing binding.gyp file in package deployed to NPM
 
 ## [2.0.0] - 2020-08-09
 ### Changes
@@ -95,6 +99,7 @@ functionality
 ## [0.0.1] - 2015-11-23
 - Initial release
 
+[#16]: https://github.com/JacobFischer/netlinkwrapper/issues/16
 [#15]: https://github.com/JacobFischer/netlinkwrapper/issues/15
 [#14]: https://github.com/JacobFischer/netlinkwrapper/pull/14
 [#13]: https://github.com/JacobFischer/netlinkwrapper/pull/13
@@ -103,6 +108,7 @@ functionality
 [#4]: https://github.com/JacobFischer/netlinkwrapper/pull/4
 [#2]: https://github.com/JacobFischer/netlinkwrapper/pull/2
 
+[2.0.2]: https://github.com/JacobFischer/netlinkwrapper/releases/tag/v2.0.2
 [2.0.1]: https://github.com/JacobFischer/netlinkwrapper/releases/tag/v2.0.1
 [2.0.0]: https://github.com/JacobFischer/netlinkwrapper/releases/tag/v2.0.0
 [1.2.1]: https://github.com/JacobFischer/netlinkwrapper/releases/tag/v1.2.1

@@ -1,6 +1,6 @@
 {
   "name": "netlinkwrapper",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Synchronous TCP/UDP sockets via NetLink Sockets",
   "author": "JacobFischer <jacob.t.fischer@gmail.com>",
   "license": "GNU GPL V2.0",
