@@ -2,7 +2,6 @@
 #define ARG_PARSER_H
 
 #include <cstdint>
-#include <iostream>
 #include <nan.h>
 #include <node.h>
 #include <sstream>
@@ -14,7 +13,7 @@ class ArgParser
 private:
     bool valid = true;
     int position = -1;
-    bool optional = true;
+    bool optional = false;
     const v8::FunctionCallbackInfo<v8::Value> *v8_args;
 
     std::string named_position()

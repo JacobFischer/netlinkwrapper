@@ -16,6 +16,17 @@ namespace GetValue
         SendableData,
     };
 
+    std::string get_typeof_str(const v8::Local<v8::Value> &arg)
+    {
+        auto isolate = v8::Isolate::GetCurrent();
+        auto typeof = arg->TypeOf(isolate);
+
+        Nan::Utf8String utf8_str(arg);
+        std::stringstream ss;
+        ss << "Got type \"" << *utf8_str << "\".";
+        return ss.str();
+    }
+
     template <typename T>
     std::string get_value(
         T &&value,
@@ -33,16 +44,16 @@ namespace GetValue
     {
         if (!arg->IsNumber())
         {
-            return "must be a number.";
+            return "must be a number. " + get_typeof_str(arg);
         }
 
         auto isolate = v8::Isolate::GetCurrent();
         auto as_number = arg->IntegerValue(isolate->GetCurrentContext()).FromJust();
 
-        if (as_number < 0)
+        if (as_number <= 0)
         {
             std::stringstream ss;
-            ss << "is negative, must be positive (" << as_number << ").";
+            ss << as_number << " must be greater than 0.";
             return ss.str();
         }
 
@@ -66,7 +77,7 @@ namespace GetValue
     {
         if (!arg->IsBoolean())
         {
-            return "must be a boolean.";
+            return "must be a boolean. " + get_typeof_str(arg);
         }
 
         auto boolean = arg->IsTrue();
@@ -83,7 +94,9 @@ namespace GetValue
         std::string invalid_string("must be an ip version string either 'IPv4' or 'IPv6'.");
         if (!arg->IsString())
         {
-            return invalid_string;
+            std::stringstream ss;
+            ss << invalid_string << " " << get_typeof_str(arg);
+            return ss.str();
         }
 
         Nan::Utf8String utf8_string(arg);
@@ -116,7 +129,7 @@ namespace GetValue
         auto is_string = arg->IsString();
         if (sub_type != SubType::SendableData && !is_string)
         {
-            return "must be a string";
+            return "must be a string. " + get_typeof_str(arg);
         }
 
         if (is_string)
