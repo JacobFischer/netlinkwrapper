@@ -1,30 +1,35 @@
 # netlinkwrapper
 
+NetLinkWrapper allows access to TCP and UDP sockets via **synchronous** calls
+safety across platforms.
+
 This is a simple node-gyp module wrapper for the C++ library
-[NetLink Sockets][netlink]. Meaning this is a very simple wrapper for a very
-simple socket TCP/UDP library. Also, and perhaps most importantly, this is an
+[NetLink Sockets][netlink]. Meaning this is a simple wrapper for a simple
+TCP/UDP socket. Also, and perhaps most importantly, this is an
 implementation that **only** works synchronously, as opposed to Node's
 asynchronous paradigm.
 
 ## Purpose
 
-Obviously node's net module is far more suited for TCP/UDP communications than
-this module. However, the net module can only work asynchronously, as is
-Node's design. However if you are in the **very** odd situation where you
-need synchronous usage of sockets across platforms then this may suit you.
+Obviously node's [net]/[dgram] modules are far more suited for most TCP/UDP
+communications than this module. However, those modules can only work
+asynchronously, as is Node's design. To contrast, that is the opposite of the
+intention of this module. If you are in the **very** odd situation where you
+need synchronous usage of sockets across platforms, then this module may suit
+you.
 
 ## How to use
 
-As with most node modules, use npm or your preferred package manager to install
-it for you.
+As with most modules, use npm or your preferred package manager to install it
+for you.
 
 ```
 npm install netlinkwrapper
 ```
 
-[node-gyp] is a dependency. Ensure your setup can build C++ modules. Follow
-their documentation for installing the appropriate C++ build tools based on
-your environment.
+**Note** [node-gyp] is a dependency. Ensure your setup can build C++ modules.
+Follow their documentation for installing the appropriate C++ build tools based
+on your environment.
 
 ## Examples
 
@@ -100,6 +105,8 @@ If you are looking for similar functionality, but **without** the node-gyp
 dependency I have made a similar (but **much** slower) module, [SyncSocket].
 
 [netlink]: http://netlinksockets.sourceforge.net/
+[net]: https://nodejs.org/api/net.html
+[dragm]: https://nodejs.org/api/dgram.html
 [node-gyp]: https://github.com/nodejs/node-gyp
 [docs]: https://jacobfischer.github.io/netlinkwrapper/
 [SyncSocket]: https://github.com/JacobFischer/sync-socket
